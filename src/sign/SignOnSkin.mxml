@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("sign.SignOn")]
+	</fx:Metadata>
+	
+	<!-- SkinParts
+	name=password, type=spark.components.TextInput, required=true
+	name=loginName, type=spark.components.TextInput, required=true
+	-->
+	<s:Group width="100%" height="100%">
+		<s:Panel name="用户登录" width="100%" height="100%"  title="登录">
+			<mx:Form>
+				<mx:FormItem label="单位名：">
+					<s:TextInput id="unitName" width="353" editable="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="用户名：">
+					<s:TextInput id="loginName" width="353" editable="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="  密码：">
+					<s:TextInput displayAsPassword="true" id="password"  width="353" editable="true"/>
+				</mx:FormItem>
+				<mx:FormItem>
+					<s:Button id="signOn" label="登录" />
+				</mx:FormItem>
+			</mx:Form>
+		</s:Panel>	
+	</s:Group>
+</s:Skin>
