@@ -15,6 +15,9 @@
   <applications>
     <application path="Main.mxml"/>
   </applications>
-  <modules/>
+  <modules>
+    <module application="src/Main.mxml" destPath="manage/modules/main/MainPage.swf" optimize="true" sourcePath="src/manage/modules/main/MainPage.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/resource/Resources.swf" optimize="true" sourcePath="src/manage/modules/resource/Resources.mxml"/>
+  </modules>
   <buildCSSFiles/>
 </actionScriptProperties>

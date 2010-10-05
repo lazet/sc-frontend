@@ -3,6 +3,7 @@
 	<name>sc-frontend</name>
 	<comment></comment>
 	<projects>
+		<project>Lcf</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

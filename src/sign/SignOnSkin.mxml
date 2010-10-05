@@ -6,22 +6,18 @@
 	<fx:Metadata>
 		[HostComponent("sign.SignOn")]
 	</fx:Metadata>
-	
-	<!-- SkinParts
-	name=password, type=spark.components.TextInput, required=true
-	name=loginName, type=spark.components.TextInput, required=true
-	-->
-	<s:Group width="100%" height="100%">
-		<s:Panel name="用户登录" width="100%" height="100%"  title="登录">
+
+	<s:Group top="1" bottom="1" left="1" right="1">
+		<s:Panel title="用户登录" horizontalCenter="0" verticalCenter="0">
 			<mx:Form>
 				<mx:FormItem label="单位名：">
-					<s:TextInput id="unitName" width="353" editable="true"/>
+					<s:TextInput id="unitName" width="353" editable="true" text="m1"/>
 				</mx:FormItem>
 				<mx:FormItem label="用户名：">
-					<s:TextInput id="loginName" width="353" editable="true"/>
+					<s:TextInput id="loginName" width="353" editable="true" text="aaa"/>
 				</mx:FormItem>
 				<mx:FormItem label="  密码：">
-					<s:TextInput displayAsPassword="true" id="password"  width="353" editable="true"/>
+					<s:TextInput displayAsPassword="true" id="password"  width="353" editable="true" text="aaa"/>
 				</mx:FormItem>
 				<mx:FormItem>
 					<s:Button id="signOn" label="登录" />

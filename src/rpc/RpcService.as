@@ -14,6 +14,7 @@ package rpc
 	
 	public class RpcService implements IEventPrefer
 	{
+		static public var RPC_SERVICE:String = "RPC_SERVICE";
 		[Inject(name="container")]
 		public var c:IContainer;
 		
@@ -36,7 +37,7 @@ package rpc
 			client.send(re.args);
 		}
 		
-		private function onCall(e:ResultEvent){
+		private function onCall(e:ResultEvent):void{
 			if(c!=null){
 				var result:Object = JParser.decode( e.message.body.toString() );
 				c.dispatch(new GeneralBundleEvent(result["type"],result["content"]));
@@ -47,7 +48,7 @@ package rpc
 			this.prefix = prefix;
 		}
 		
-		private function onError(e:FaultEvent){
+		private function onError(e:FaultEvent):void{
 			Alert.show(e.statusCode + e.message.body.toString());
 		}
 	}
