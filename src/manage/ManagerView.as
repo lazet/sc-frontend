@@ -2,10 +2,12 @@ package manage
 {
 	import flash.events.MouseEvent;
 	
+	
 	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
 	import mx.controls.LinkButton;
 	import mx.events.CloseEvent;
+	import mx.managers.PopUpManager;
 	
 	import org.lcf.AbstractInnerModule;
 	import org.lcf.Constants;
@@ -23,6 +25,7 @@ package manage
 	import spark.components.ButtonBar;
 	import spark.components.DropDownList;
 	import spark.components.Label;
+	import spark.components.PopUpAnchor;
 	import spark.components.supportClasses.SkinnableComponent;
 	import spark.events.IndexChangeEvent;
 	
@@ -31,7 +34,7 @@ package manage
 		[SkinPart(required="true")]
 		public var unitName:Label;
 		[SkinPart(required="true")]
-		public var loginName:Label;
+		public var loginName:LinkButton;
 		[SkinPart(required="true")]
 		public var exit:LinkButton;
 		[SkinPart(required="true")]
@@ -40,6 +43,9 @@ package manage
 		public var content:Overlay;
 		[SkinPart(required="true")]
 		public var switchView:DropDownList;
+
+		public var mySettings:MySettings;
+		
 		protected var c:IContainer;
 		
 		public function set container(c:IContainer):void{
@@ -82,12 +88,20 @@ package manage
 			var bb:ButtonBar = ButtonBar(e.target);
 			this.content.open(bb.selectedItem.url,bb.selectedItem.name,bb.selectedItem.url);
 		}
+		protected function onMySettings(e:MouseEvent):void{
+			if(this.mySettings == null){
+				this.mySettings = new MySettings(this.c);
+			}
+			PopUpManager.addPopUp(this.mySettings,this,true);
+			PopUpManager.centerPopUp(this.mySettings);
+		}
 		override protected function partAdded(partName:String, instance:Object):void{
 			if(instance == this.unitName){
 				this.unitName.text = (this.c.get(SignInfo.SIGN_INFO) as SignInfo).unitName;
 			}
 			else if (instance == this.loginName){
-				this.loginName.text = (this.c.get(SignInfo.SIGN_INFO) as SignInfo).loginName;
+				this.loginName.label = (this.c.get(SignInfo.SIGN_INFO) as SignInfo).loginName;
+				this.loginName.addEventListener(MouseEvent.CLICK,onMySettings);
 			}
 			else if (instance == this.exit){
 				this.exit.addEventListener(MouseEvent.CLICK,onExitClicked);
@@ -122,6 +136,9 @@ package manage
 			}
 			else if (instance == this.switchView){
 				this.switchView.removeEventListener(IndexChangeEvent.CHANGE,onSwitchView);
+			}
+			else if (instance == this.loginName){
+				this.loginName.removeEventListener(MouseEvent.CLICK,onMySettings);
 			}
 		}
 	}

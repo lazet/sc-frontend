@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:util="util.*">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("manage.MySettings")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<mx:StringValidator id="oldPassValidate" property="text" required="true" source="{oldPass}" maxLength="20" minLength="1" requiredFieldError="旧密码不能为空" tooLongError="旧密码不能超过20位" tooShortError="旧密码不能小于2位"/>
+		<mx:StringValidator id="newPassValidate" property="text" required="true" source="{newPass}" maxLength="20" minLength="1" requiredFieldError="新密码不能为空" tooLongError="新密码不能超过20位" tooShortError="新密码不能小于2位"/>
+		<mx:StringValidator id="newPass2Validate" property="text" required="true" source="{newPass2}" maxLength="20" minLength="1" requiredFieldError="新密码不能为空" tooLongError="新密码不能超过20位" tooShortError="新密码不能小于2位"/>
+		<util:PasswordConsistenceValidate id="inconsistenceValidate" property="text" source="{newPass2}" password1="{newPass}" inconsistenceError="密码不一致"/>
+		<mx:RegExpValidator id="emailValidate" property="text" expression="^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+((\.[a-zA-Z0-9_-]\{2,3\})\{1,2\})$" source="{email}" noExpressionError="邮箱不正确"/>
+		<mx:RegExpValidator id="mobileValidate" expression="^1[3,5,8][0-9]\{9\}$"  property="text" source="{mobile}" noMatchError="手机号码不正确"/>
+		<mx:RegExpValidator id="trueNameValidate" expression="^\w\{2,20\}$" flags="g" noMatchError="姓名填写不正确" source="{trueName}" property="text"/>
+	</fx:Declarations>
+	<s:Group top="0" bottom="0" left="0" right="0">
+		<s:Panel title="个人信息设定">
+			<mx:Form>
+				<mx:FormItem label="用户名：" required="false">
+					<s:TextInput id="loginName" width="200" editable="false" contentBackgroundColor="#696969"/>
+				</mx:FormItem>
+				<mx:FormItem label="旧密码：" required="true">
+					<s:TextInput id="oldPass" width="200" displayAsPassword="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="新密码：" required="true">
+					<s:TextInput id="newPass" width="200" displayAsPassword="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="确认新密码：" required="true">
+					<s:TextInput id="newPass2" width="200" displayAsPassword="true"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="真实姓名：">
+					<s:TextInput id="trueName" width="200"/>
+				</mx:FormItem>
+				<mx:FormItem label="手机号码：">
+					<s:TextInput id="mobile" width="200"/>
+				</mx:FormItem>
+				<mx:FormItem label="邮箱：">
+					<s:TextInput id="email" width="200"/>
+				</mx:FormItem>
+				<mx:FormItem>
+					<s:HGroup>
+						<s:Button id="saveButton" label="保存" />
+						<s:Button id="cancelButton" label="取消" />
+					</s:HGroup>
+				</mx:FormItem>
+			</mx:Form>
+		</s:Panel>	
+	</s:Group>
+			 
+</s:Skin>

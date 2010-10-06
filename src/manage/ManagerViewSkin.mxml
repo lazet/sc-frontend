@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		xmlns:s="library://ns.adobe.com/flex/spark" 
-		xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:lcf="org.lcf.*">
+		xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:lcf="org.lcf.*" xmlns:main="manage.modules.main.*">
 	<!-- host component -->
 	<fx:Metadata>
 		[HostComponent("manage.ManagerView")]
@@ -24,7 +24,7 @@
 			<s:VGroup horizontalAlign="right">
 				<s:HGroup height="50%" verticalAlign="middle">
 					<s:Label text="当前用户：" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
-					<s:Label id="loginName" text="登录用户名" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
+					<mx:LinkButton id="loginName"  label="登录用户名" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
 					<mx:Spacer width="100%"/>
 					<mx:LinkButton id="exit" label="退出"  fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
 				</s:HGroup>
@@ -39,5 +39,6 @@
 			</s:stroke>
 		</s:Line>
 		<lcf:Overlay width="100%" height="100%" id="content"/>
+
 	</s:Group>
 </s:Skin>

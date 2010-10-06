@@ -1,8 +1,13 @@
 package sign
 {
+	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	
+	import manage.ManagerView;
+	
 	import mx.controls.Alert;
+	import mx.validators.StringValidator;
+	import mx.validators.Validator;
 	
 	import org.lcf.EventListenerModel;
 	import org.lcf.IComponent;
@@ -12,8 +17,6 @@ package sign
 	import org.lcf.util.ModuleEvent;
 	
 	import rpc.RpcEvent;
-	
-	import manage.ManagerView;
 	
 	import spark.components.Button;
 	import spark.components.TextInput;
@@ -44,12 +47,21 @@ package sign
 		[SkinPart(required="true")]
 		public var signOn:Button;
 		
+		
+		[SkinPart(required="true")]
+		public var unitNameValidate:StringValidator;
+		[SkinPart(required="true")]
+		public var loginNameValidate:StringValidator;
+		[SkinPart(required="true")]
+		public var passwordValidate:StringValidator;
+		
 		public function SignOn()
 		{
 			super();
 			this.percentHeight = 100;
 			this.percentWidth  = 100;
 			this.setStyle("skinClass",SignOnSkin);
+			this.addEventListener(KeyboardEvent.KEY_UP,onKeyBoardEvent);
 		}
 		
 		public function get preferEventListeners():Array
@@ -72,16 +84,8 @@ package sign
 			Alert.show("登录失败:" + e.bundle);
 		}
 		public function onSignOn(e:MouseEvent):void{
-			if(unitName.text == ""){
-				Alert.show("单位名称不能为空");
-				return;
-			}
-			if(loginName.text == ""){
-				Alert.show("用户名不能为空");
-				return;
-			} 
-			if(password.text == ""){
-				Alert.show("密码不能为空");
+			var all:Array=Validator.validateAll([unitNameValidate,loginNameValidate,passwordValidate]);
+			if(all.length >0){
 				return;
 			}
 			var o:Object = new Object();
@@ -101,6 +105,14 @@ package sign
 		override protected function partRemoved(partName:String, instance:Object):void{
 			if(instance == this.signOn){
 				this.signOn.removeEventListener(MouseEvent.CLICK,this.onSignOn);
+			}
+		}
+		public function onKeyBoardEvent(e:KeyboardEvent):void{
+			switch(e.keyCode){
+				case 13:
+					this.onSignOn(null);
+					break;
+
 			}
 		}
 	}
