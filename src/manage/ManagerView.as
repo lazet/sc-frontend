@@ -55,7 +55,7 @@ package manage
 		public function get preferEventListeners():Array
 		{
 			//var signOffSuccess:EventListenerModel = new EventListenerModel(SIGN_OFF_SUCCESS_EVENT,onSignOffSuccess);
-			
+			//将来添加对多个桌台的切换事件处理
 			return [ ];
 		}
 		

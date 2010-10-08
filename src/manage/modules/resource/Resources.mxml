@@ -3,12 +3,73 @@
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx" 
 					   xmlns:c="org.lcf.*"
-					   layout="absolute" width="100%" height="100%" >
+					   layout="absolute" width="100%" height="100%" creationComplete="onInit(event)" >
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			import rpc.RpcService;
+			
+			import spark.components.DataGroup;
+			import spark.components.List;
+
+			protected function onInit(event:FlexEvent):void
+			{
+				operationArea.container.parentContainer = this.c;
+				//加载RPC服务
+				var info:SysInfo = c.get(SysInfo.SYSTEM_INFO) as SysInfo;
+				var rpcClient:RpcService = new RpcService(info.remoteSiteUrl);
+				operationArea.container.put(RpcService.RPC_SERVICE, rpcClient)
+				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf",null,false,false);
+				//加载商品品类列表
+				c.dispatch(new RpcEvent("/product/category/get",{"size":"10"}));
+				//加载交易记录列表
+			}
+			
+			override public function  get preferEventListeners():Array
+			{
+				var getProductCategorySuccess:EventListenerModel = new EventListenerModel("getProductCategory.success",onGetProductCategorySuccess);
+				return [getProductCategorySuccess ];
+			}
+			protected function onGetProductCategorySuccess(e:GeneralBundleEvent){
+				var results = e.bundle as Array;
+				productCategory.dataProvider = new ArrayCollection(results);
+				
+			}
+			protected function onResourceCenter(e:MouseEvent):void{
+				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf",null,false,false);
+			}
+
+		]]>
+	</fx:Script>
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:VGroup width="100%" height="100%" >
-		<s:Label text="欢迎来到资源中心.在这里您可以对各种资源（商品，服务，员工，消费记录，充值记录，会员等）进行管理"/>
-
-	</s:VGroup>
+	<s:HGroup width="100%" height="100%" gap="0" >
+		<s:VGroup width="20%" height="100%" gap="0">
+			<s:Button label="资源中心" id="resourceCenter" width="100%" height="24" fontSize="16"  chromeColor="#696969" click=""/>
+			<mx:Accordion id="category" width="100%" height="100%">
+				<s:NavigatorContent  label="商品" textAlign="center" width="100%" height="100%">
+					<s:DataGroup id="productCategory" width="100%"
+								 clipAndEnableScrolling="true"
+								 itemRenderer="manage.modules.resource.CategoryItemRenderer">
+						<s:layout>
+							<s:VerticalLayout />
+						</s:layout>
+					</s:DataGroup>
+					<mx:LinkButton label="新增类别" right="2" bottom="2"/>
+				</s:NavigatorContent>
+				<s:NavigatorContent id="consumeRecords" label="消费记录" textAlign="center" width="100%" height="100%">
+					
+				</s:NavigatorContent>
+			</mx:Accordion>	
+		</s:VGroup>
+		<c:TabNavigator id="operationArea"  width="100%" height="100%"/>
+	</s:HGroup>
 </c:AbstractInnerModule>
