@@ -81,6 +81,7 @@ package sign
 			
 		}
 		public function onSignOnFailed(e:GeneralBundleEvent):void{
+			this.password.text = '';
 			Alert.show("登录失败:" + e.bundle);
 		}
 		public function onSignOn(e:MouseEvent):void{

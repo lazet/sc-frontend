@@ -49,7 +49,7 @@ package rpc
 		}
 		
 		private function onError(e:FaultEvent):void{
-			Alert.show(e.statusCode + e.message.body.toString());
+			Alert.show(e.fault.faultCode + ' ' + e.fault.faultDetail,"网络访问错误");
 		}
 	}
 }

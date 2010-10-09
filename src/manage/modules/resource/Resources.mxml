@@ -9,6 +9,8 @@
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.validators.Validator;
 			
 			import org.lcf.EventListenerModel;
 			import org.lcf.util.GeneralBundleEvent;
@@ -18,6 +20,8 @@
 			
 			import spark.components.DataGroup;
 			import spark.components.List;
+			
+			import util.EventTypeDefine;
 
 			protected function onInit(event:FlexEvent):void
 			{
@@ -25,19 +29,29 @@
 				//加载RPC服务
 				var info:SysInfo = c.get(SysInfo.SYSTEM_INFO) as SysInfo;
 				var rpcClient:RpcService = new RpcService(info.remoteSiteUrl);
+				
+				productCategory.addEventListener(util.EventTypeDefine.PRODUCT_CATEGORY_SWITCH_EVENT,onSwitchCategory);
+				productCategory.addEventListener(util.EventTypeDefine.PRODUCT_CATEGORY_DELETE_EVENT,onDeleteCategory);
+				
 				operationArea.container.put(RpcService.RPC_SERVICE, rpcClient)
 				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf",null,false,false);
 				//加载商品品类列表
-				c.dispatch(new RpcEvent("/product/category/get",{"size":"10"}));
+				c.dispatch(new RpcEvent("product/category/get",{"pageFrom":"1","size":"10"}));
 				//加载交易记录列表
+				
+				//加载商品管理
+				
 			}
 			
 			override public function  get preferEventListeners():Array
 			{
 				var getProductCategorySuccess:EventListenerModel = new EventListenerModel("getProductCategory.success",onGetProductCategorySuccess);
-				return [getProductCategorySuccess ];
+				var deleteProductCategorySuccess:EventListenerModel = new EventListenerModel("deleteProductCategory.success",onGetProductCategorySuccess);
+				var addProductCategorySuccess:EventListenerModel = new EventListenerModel("addProductCategory.success",onAddProductCategorySuccess);
+				var addProductCategoryFailed:EventListenerModel = new EventListenerModel("addProductCategory.failed",onAddProductCategoryFailed);
+				return [getProductCategorySuccess,deleteProductCategorySuccess, addProductCategorySuccess, addProductCategoryFailed];
 			}
-			protected function onGetProductCategorySuccess(e:GeneralBundleEvent){
+			protected function onGetProductCategorySuccess(e:GeneralBundleEvent):void{
 				var results = e.bundle as Array;
 				productCategory.dataProvider = new ArrayCollection(results);
 				
@@ -45,25 +59,60 @@
 			protected function onResourceCenter(e:MouseEvent):void{
 				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf",null,false,false);
 			}
+			protected function onDeleteCategory(e:GeneralBundleEvent):void{
+				c.dispatch(new RpcEvent("product/category/delete",{"label":e.bundle["label"],"pageFrom":"1","size":"10"}));
+			}
+			protected function onAddCategory():void{
+				var results:Array = Validator.validateAll([newCategoryValidate]);
+				if(results.length > 0){
+					return;
+				}
+				c.dispatch(new RpcEvent("product/category/add",{"label":newCategory.text,"pageFrom":"1","size":"10"}));
+			}
+			protected function onAddProductCategorySuccess(e:GeneralBundleEvent):void{
+				newCategory.text = "";
+				var results = e.bundle as Array;
+				productCategory.dataProvider = new ArrayCollection(results);
+				
+			}
+			protected function onAddProductCategoryFailed(e:GeneralBundleEvent):void{
+				Alert.show(""+ e.bundle, "品类添加失败");
+			}
+			protected function onSwitchCategory(e:GeneralBundleEvent):void{
+				//打开商品管理页面
+
+			}
+
+
+			protected function category_changeHandler(event:IndexChangedEvent):void
+			{
+				//打开对应的管理列表
+				Alert.show(category.selectedChild.label);
+			}
 
 		]]>
 	</fx:Script>
 	<fx:Declarations>
-		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:RegExpValidator id="newCategoryValidate" expression="^[\\u4e00-\u9fa5,\\w]\{2,20\}$" flags="g" noMatchError="品类名称不正确" required="true" requiredFieldError="请填写品类名称" source="{newCategory}" property="text"/>
 	</fx:Declarations>
 	<s:HGroup width="100%" height="100%" gap="0" >
 		<s:VGroup width="20%" height="100%" gap="0">
 			<s:Button label="资源中心" id="resourceCenter" width="100%" height="24" fontSize="16"  chromeColor="#696969" click=""/>
-			<mx:Accordion id="category" width="100%" height="100%">
+			<mx:Accordion id="category" width="100%" height="100%" change="category_changeHandler(event)">
 				<s:NavigatorContent  label="商品" textAlign="center" width="100%" height="100%">
 					<s:DataGroup id="productCategory" width="100%"
 								 clipAndEnableScrolling="true"
-								 itemRenderer="manage.modules.resource.CategoryItemRenderer">
+								 itemRenderer="manage.modules.resource.CategoryItemRenderer"
+								 >
 						<s:layout>
 							<s:VerticalLayout />
 						</s:layout>
 					</s:DataGroup>
-					<mx:LinkButton label="新增类别" right="2" bottom="2"/>
+					<s:HGroup bottom="2" width="100%" verticalAlign="middle">
+						<s:Label text="添加品类："/>
+						<s:TextInput id="newCategory" left="0" width="100%" textAlign="left"/>
+						<mx:LinkButton label="保存" click="onAddCategory()"/>
+					</s:HGroup>
 				</s:NavigatorContent>
 				<s:NavigatorContent id="consumeRecords" label="消费记录" textAlign="center" width="100%" height="100%">
 					
