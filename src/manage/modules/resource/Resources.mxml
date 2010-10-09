@@ -3,7 +3,7 @@
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx" 
 					   xmlns:c="org.lcf.*"
-					   layout="absolute" width="100%" height="100%" creationComplete="onInit(event)" >
+					   layout="absolute" width="100%" height="100%" creationComplete="onInit(event)" xmlns:util="util.*" >
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayCollection;
@@ -53,6 +53,7 @@
 			}
 			protected function onGetProductCategorySuccess(e:GeneralBundleEvent):void{
 				var results = e.bundle as Array;
+				results.splice(0,0,{"label":"全部"});
 				productCategory.dataProvider = new ArrayCollection(results);
 				
 			}
@@ -63,7 +64,7 @@
 				c.dispatch(new RpcEvent("product/category/delete",{"label":e.bundle["label"],"pageFrom":"1","size":"10"}));
 			}
 			protected function onAddCategory():void{
-				var results:Array = Validator.validateAll([newCategoryValidate]);
+				var results:Array = Validator.validateAll([newCategoryValidate,isNotEqualsValidate]);
 				if(results.length > 0){
 					return;
 				}
@@ -72,6 +73,7 @@
 			protected function onAddProductCategorySuccess(e:GeneralBundleEvent):void{
 				newCategory.text = "";
 				var results = e.bundle as Array;
+				results.splice(0,0,{"label":"全部"});
 				productCategory.dataProvider = new ArrayCollection(results);
 				
 			}
@@ -83,22 +85,16 @@
 
 			}
 
-
-			protected function category_changeHandler(event:IndexChangedEvent):void
-			{
-				//打开对应的管理列表
-				Alert.show(category.selectedChild.label);
-			}
-
 		]]>
 	</fx:Script>
 	<fx:Declarations>
 		<mx:RegExpValidator id="newCategoryValidate" expression="^[\\u4e00-\u9fa5,\\w]\{2,20\}$" flags="g" noMatchError="品类名称不正确" required="true" requiredFieldError="请填写品类名称" source="{newCategory}" property="text"/>
+		<util:IsNotEqualsValidate word="全部" source="{newCategory}"  property="text"  id="isNotEqualsValidate" equalsError="“全部”不能作为品类名称"/>
 	</fx:Declarations>
 	<s:HGroup width="100%" height="100%" gap="0" >
 		<s:VGroup width="20%" height="100%" gap="0">
 			<s:Button label="资源中心" id="resourceCenter" width="100%" height="24" fontSize="16"  chromeColor="#696969" click=""/>
-			<mx:Accordion id="category" width="100%" height="100%" change="category_changeHandler(event)">
+			<mx:Accordion id="category" width="100%" height="100%">
 				<s:NavigatorContent  label="商品" textAlign="center" width="100%" height="100%">
 					<s:DataGroup id="productCategory" width="100%"
 								 clipAndEnableScrolling="true"
