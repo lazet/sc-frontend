@@ -39,13 +39,27 @@
 				arg["order"] = "{\"order\":1}";
 				this.c.dispatch(new RpcEvent("data/findAll",arg));
 				//获取商品分类
+				var productCategory:String = String(this.c.get(ObjectNameDefine.CURRENT_PRODUCT_CATEGORY));
 				
 				//查询商品，每页50
+				var pArg:Object = new Object();
+				pArg["collection"] = "product";
+				if("全部" == productCategory || productCategory == null || productCategory == "")
+					pArg["condition"] = "{}";
+				else{
+					pArg["condition"] = "{\"品类\":\"" + productCategory + "\"}";
+					searchCondition.textInput.text = "品类:" + productCategory;
+				}
+				pArg["pageFrom"] = 1;
+				pArg["size"] = 50;
+				pArg["order"] = "{\"商品名称\":1}";
+				this.c.dispatch(new RpcEvent("data/findByPage",pArg));
+				
 			}
 			override public function  get preferEventListeners():Array
 			{
 				var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
-				var products:EventListenerModel = new EventListenerModel("products.findByPage",onProductsFind);
+				var products:EventListenerModel = new EventListenerModel("product.findByPage",onProductsFindByPage);
 				return [productDefine,products];
 			}
 			/**
@@ -77,23 +91,23 @@
 				}
 				productsDisplay.columns = columns;
 			}
-			public function onProductsFind(e:GeneralBundleEvent):void{
+			public function onProductsFindByPage(e:GeneralBundleEvent):void{
 				var defs:Array = e.bundle as Array;
 				var defCollection:ArrayCollection = new ArrayCollection(defs);
-				
+				productsDisplay.dataProvider = defCollection;
 			}
 		]]>
 	</fx:Script>
 	<s:VGroup  width="100%" height="100%" >
 		<s:HGroup verticalAlign="middle" width="600" gap="10">
 			<s:Label paddingLeft="120" text=""/> 
-			<s:ComboBox width="300" fontSize="16" />
+			<s:ComboBox id="searchCondition" width="300" fontSize="16" />
 			<s:Button label="搜索" />
 			<mx:Spacer width="100%"/>
 			<s:Button label="添加商品"/>
 		</s:HGroup>
 	
-		<mx:DataGrid id="productsDisplay" width="100%" height="100%"/>
+		<mx:DataGrid id="productsDisplay" width="100%" height="100%" textAlign="center"/>
 		<s:HGroup  width="600">
 			<s:Label text="共计\{\}种商品" paddingLeft="125"/>
 			<mx:Spacer width="100%"/>
