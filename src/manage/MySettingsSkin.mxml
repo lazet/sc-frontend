@@ -13,7 +13,7 @@
 		<util:PasswordConsistenceValidate id="inconsistenceValidate" property="text" source="{newPass2}" password1="{newPass}" inconsistenceError="密码不一致"/>
 		<mx:RegExpValidator id="emailValidate" property="text" expression="^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+((\.[a-zA-Z0-9_-]\{2,3\})\{1,2\})$" source="{email}" noExpressionError="邮箱不正确"/>
 		<mx:RegExpValidator id="mobileValidate" expression="^1[3,5,8][0-9]\{9\}$"  property="text" source="{mobile}" noMatchError="手机号码不正确"/>
-		<mx:RegExpValidator id="trueNameValidate" expression="^[\\u4e00-\u9fa5,\\w]\{2,20\}$" flags="g" noMatchError="姓名填写不正确" source="{trueName}" property="text"/>
+		<mx:RegExpValidator id="trueNameValidate" expression="^[\u4e00-\u9fa5,\w]\{2,20\}$" flags="g" noMatchError="姓名填写不正确" source="{trueName}" property="text"/>
 	</fx:Declarations>
 	<s:Group top="0" bottom="0" left="0" right="0">
 		<s:Panel title="个人信息设定">

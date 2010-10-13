@@ -19,6 +19,7 @@
     <module application="src/Main.mxml" destPath="manage/modules/main/MainPage.swf" optimize="true" sourcePath="src/manage/modules/main/MainPage.mxml"/>
     <module application="src/Main.mxml" destPath="manage/modules/resource/Resources.swf" optimize="true" sourcePath="src/manage/modules/resource/Resources.mxml"/>
     <module application="src/Main.mxml" destPath="manage/modules/resource/ResourcesMainPage.swf" optimize="true" sourcePath="src/manage/modules/resource/ResourcesMainPage.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/product/Products.swf" optimize="true" sourcePath="src/manage/modules/product/Products.mxml"/>
   </modules>
   <buildCSSFiles/>
 </actionScriptProperties>

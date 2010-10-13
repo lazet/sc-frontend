@@ -1,6 +1,7 @@
 package manage
 {
 	import flash.events.MouseEvent;
+	import flash.system.IME;
 	
 	import mx.controls.Alert;
 	import mx.events.FlexEvent;
@@ -86,6 +87,7 @@ package manage
 			arg.loginName = userInfo.loginName;
 			arg.unitName  = userInfo.unitName;
 			this.c.dispatch(new RpcEvent("mySettings/get",arg));
+			IME.enabled = true;
 		}
 		public function onGetMySettings(e:GeneralBundleEvent):void{
 			var info:Object = e.bundle;

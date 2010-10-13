@@ -22,6 +22,7 @@
 			import spark.components.List;
 			
 			import util.EventTypeDefine;
+			import util.ObjectNameDefine;
 
 			protected function onInit(event:FlexEvent):void
 			{
@@ -34,12 +35,11 @@
 				productCategory.addEventListener(util.EventTypeDefine.PRODUCT_CATEGORY_DELETE_EVENT,onDeleteCategory);
 				
 				operationArea.container.put(RpcService.RPC_SERVICE, rpcClient)
-				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf",null,false,false);
+				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf","assets/greenHomePage.jpeg",false,false);
 				//加载商品品类列表
-				c.dispatch(new RpcEvent("product/category/get",{"pageFrom":"1","size":"10"}));
+				c.dispatch(new RpcEvent("product/category/get",{"pageFrom":"1","size":"50"}));
 				//加载交易记录列表
-				
-				//加载商品管理
+
 				
 			}
 			
@@ -52,7 +52,7 @@
 				return [getProductCategorySuccess,deleteProductCategorySuccess, addProductCategorySuccess, addProductCategoryFailed];
 			}
 			protected function onGetProductCategorySuccess(e:GeneralBundleEvent):void{
-				var results = e.bundle as Array;
+				var results:Array = e.bundle as Array;
 				results.splice(0,0,{"label":"全部"});
 				productCategory.dataProvider = new ArrayCollection(results);
 				
@@ -61,18 +61,18 @@
 				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf",null,false,false);
 			}
 			protected function onDeleteCategory(e:GeneralBundleEvent):void{
-				c.dispatch(new RpcEvent("product/category/delete",{"label":e.bundle["label"],"pageFrom":"1","size":"10"}));
+				c.dispatch(new RpcEvent("product/category/delete",{"label":e.bundle["label"],"pageFrom":"1","size":"50"}));
 			}
 			protected function onAddCategory():void{
 				var results:Array = Validator.validateAll([newCategoryValidate,isNotEqualsValidate]);
 				if(results.length > 0){
 					return;
 				}
-				c.dispatch(new RpcEvent("product/category/add",{"label":newCategory.text,"pageFrom":"1","size":"10"}));
+				c.dispatch(new RpcEvent("product/category/add",{"label":newCategory.text,"pageFrom":"1","size":"50"}));
 			}
 			protected function onAddProductCategorySuccess(e:GeneralBundleEvent):void{
 				newCategory.text = "";
-				var results = e.bundle as Array;
+				var results : Array = e.bundle as Array;
 				results.splice(0,0,{"label":"全部"});
 				productCategory.dataProvider = new ArrayCollection(results);
 				
@@ -81,14 +81,26 @@
 				Alert.show(""+ e.bundle, "品类添加失败");
 			}
 			protected function onSwitchCategory(e:GeneralBundleEvent):void{
+				//设置当前商品分类查询条件
+				operationArea.container.put(ObjectNameDefine.CURRENT_PRODUCT_CATEGORY,e.bundle.label);
 				//打开商品管理页面
+				operationArea.open(ObjectNameDefine.PRODUCTS_MODULE_ID,"商品","manage/modules/product/Products.swf","assets/products.jpeg",true,true);
+			}
 
+
+			protected function newCategory_keyUpHandler(e:KeyboardEvent):void
+			{
+				switch(e.keyCode){
+					case 13:
+						onAddCategory();
+						break;
+				}
 			}
 
 		]]>
 	</fx:Script>
 	<fx:Declarations>
-		<mx:RegExpValidator id="newCategoryValidate" expression="^[\\u4e00-\u9fa5,\\w]\{2,20\}$" flags="g" noMatchError="品类名称不正确" required="true" requiredFieldError="请填写品类名称" source="{newCategory}" property="text"/>
+		<mx:RegExpValidator id="newCategoryValidate" expression="^[\u4e00-\u9fa5,\w]\{2,20\}$" flags="g" noMatchError="品类名称不正确" required="true" requiredFieldError="请填写品类名称" source="{newCategory}" property="text"/>
 		<util:IsNotEqualsValidate word="全部" source="{newCategory}"  property="text"  id="isNotEqualsValidate" equalsError="“全部”不能作为品类名称"/>
 	</fx:Declarations>
 	<s:HGroup width="100%" height="100%" gap="0" >
@@ -96,17 +108,19 @@
 			<s:Button label="资源中心" id="resourceCenter" width="100%" height="24" fontSize="16"  chromeColor="#696969" click=""/>
 			<mx:Accordion id="category" width="100%" height="100%">
 				<s:NavigatorContent  label="商品" textAlign="center" width="100%" height="100%">
-					<s:DataGroup id="productCategory" width="100%"
-								 clipAndEnableScrolling="true"
-								 itemRenderer="manage.modules.resource.CategoryItemRenderer"
-								 >
-						<s:layout>
-							<s:VerticalLayout />
-						</s:layout>
-					</s:DataGroup>
+					<s:Scroller width="100%" height="95%">
+						<s:DataGroup id="productCategory" width="100%"
+									 clipAndEnableScrolling="true"
+									 itemRenderer="manage.modules.resource.CategoryItemRenderer"
+									 >
+							<s:layout>
+								<s:VerticalLayout />
+							</s:layout>
+						</s:DataGroup>
+					</s:Scroller>
 					<s:HGroup bottom="2" width="100%" verticalAlign="middle">
 						<s:Label text="添加品类："/>
-						<s:TextInput id="newCategory" left="0" width="100%" textAlign="left"/>
+						<s:TextInput id="newCategory" left="0" width="100%" textAlign="left" keyUp = "newCategory_keyUpHandler(event)"/>
 						<mx:LinkButton label="保存" click="onAddCategory()"/>
 					</s:HGroup>
 				</s:NavigatorContent>

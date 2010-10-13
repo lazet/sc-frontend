@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:AbstractInnerModule xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   xmlns:c="org.lcf.*"
+					   layout="absolute" width="100%" height="100%" creationComplete="onInit(event)" xmlns:util="util.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.validators.Validator;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			import rpc.RpcService;
+			
+			import spark.components.DataGroup;
+			import spark.components.List;
+			
+			import util.EventTypeDefine;
+			import util.ObjectNameDefine;
+			
+			protected var defs:Array;
+			
+			protected function onInit(event:FlexEvent):void{
+				//获取商品定义
+				this.c.dispatch(new RpcEvent("data/findAll",{"collection":"productDefine","condition":"{}" ,"pageFrom":"1","size":"50"}));
+				//获取商品分类
+				
+				//查询商品，每页50
+			}
+			override public function  get preferEventListeners():Array
+			{
+				var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
+				var products:EventListenerModel = new EventListenerModel("products.find",onProductsFind);
+				return [productDefine,products];
+			}
+			/**
+			 * 展示一列，如果是数组，则转换为字符串
+			 */ 
+			protected function columnShow(item:Object,column:DataGridColumn):String{
+				if( item[column.dataField] is Array){
+					var items:Array = item[column.dataField] as Array;
+					var label = "";
+					for (var i:int=0;i< items.length;i++){
+						label += (items[i] + ' ');
+					}
+					return label;
+				}
+				else{
+					return String(item[column.dataField]);
+				}
+			}
+			public function onProductDefineFindAll(e:GeneralBundleEvent):void{
+				defs = e.bundle as Array;
+				var columns:Array = new Array();
+				for (var i:int= 0; i< defs.length; i++){
+					var column:DataGridColumn = new DataGridColumn();
+					column.headerText = defs[i]["itemName"];
+					column.dataField = defs[i]["itemName"];
+					column.dataTipFunction = columnShow;
+					column.labelFunction = columnShow;
+					columns.push(column);
+				}
+				productsDisplay.columns = columns;
+			}
+			public function onProductsFind(e:GeneralBundleEvent):void{
+				var defs:Array = e.bundle as Array;
+				var defCollection:ArrayCollection = new ArrayCollection(defs);
+				
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup  width="100%" height="100%" >
+		<s:HGroup verticalAlign="middle" width="600" gap="10">
+			<s:Label paddingLeft="120" text=""/> 
+			<s:ComboBox width="300" fontSize="16" />
+			<s:Button label="搜索" />
+			<mx:Spacer width="100%"/>
+			<s:Button label="添加商品"/>
+		</s:HGroup>
+	
+		<mx:DataGrid id="productsDisplay" width="100%" height="100%"/>
+		<s:HGroup  width="600">
+			<s:Label text="共计\{\}种商品" paddingLeft="125"/>
+			<mx:Spacer width="100%"/>
+			<s:Label text="上一页" toolTip="上一页"/>
+			<s:Label id="currentPageBottom" text="1"/>
+			<s:Label text="下一页" toolTip="下一页" textDecoration="underline"/>	
+		</s:HGroup>
+		
+	</s:VGroup>
+</c:AbstractInnerModule>
