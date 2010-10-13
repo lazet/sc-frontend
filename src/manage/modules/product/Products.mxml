@@ -32,8 +32,12 @@
 			protected var defs:Array;
 			
 			protected function onInit(event:FlexEvent):void{
-				//获取商品定义
-				this.c.dispatch(new RpcEvent("data/findAll",{"collection":"productDefine","condition":"{}" ,"pageFrom":"1","size":"50"}));
+				//获取商品定义 
+				var arg:Object = new Object();
+				arg["collection"] = "productDefine";
+				arg["condition"] = "{}";
+				arg["order"] = "{\"order\":1}";
+				this.c.dispatch(new RpcEvent("data/findAll",arg));
 				//获取商品分类
 				
 				//查询商品，每页50
@@ -41,7 +45,7 @@
 			override public function  get preferEventListeners():Array
 			{
 				var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
-				var products:EventListenerModel = new EventListenerModel("products.find",onProductsFind);
+				var products:EventListenerModel = new EventListenerModel("products.findByPage",onProductsFind);
 				return [productDefine,products];
 			}
 			/**
