@@ -32,6 +32,9 @@
 			protected var defs:Array;
 			
 			protected function onInit(event:FlexEvent):void{
+				//注册列表删除和编辑监听事件
+				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_DELETE_EVENT,onDelete);
+				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_EDIT_EVENT,onEdit);
 				//获取商品定义 
 				var arg:Object = new Object();
 				arg["collection"] = "productDefine";
@@ -56,6 +59,12 @@
 				this.c.dispatch(new RpcEvent("data/findByPage",pArg));
 				
 			}
+			public function onDelete(e:GeneralBundleEvent):void{
+				Alert.show(e.bundle["商品名称"]);
+			}
+			public function onEdit(e:GeneralBundleEvent):void{
+				Alert.show(e.bundle["商品名称"]);
+			}
 			override public function  get preferEventListeners():Array
 			{
 				var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
@@ -68,7 +77,7 @@
 			protected function columnShow(item:Object,column:DataGridColumn):String{
 				if( item[column.dataField] is Array){
 					var items:Array = item[column.dataField] as Array;
-					var label = "";
+					var label:String = "";
 					for (var i:int=0;i< items.length;i++){
 						label += (items[i] + ' ');
 					}
@@ -82,6 +91,8 @@
 				defs = e.bundle as Array;
 				var columns:Array = new Array();
 				for (var i:int= 0; i< defs.length; i++){
+					if(!defs[i]["showInList"])
+						continue;
 					var column:DataGridColumn = new DataGridColumn();
 					column.headerText = defs[i]["itemName"];
 					column.dataField = defs[i]["itemName"];
@@ -89,12 +100,25 @@
 					column.labelFunction = columnShow;
 					columns.push(column);
 				}
+				var column:DataGridColumn = new DataGridColumn();
+				column.headerText = "操作";
+				column.dataField = "操作";
+				column.itemRenderer = new ClassFactory(ProductOperateRenderer);
+				columns.push(column);
 				productsDisplay.columns = columns;
 			}
 			public function onProductsFindByPage(e:GeneralBundleEvent):void{
 				var defs:Array = e.bundle as Array;
 				var defCollection:ArrayCollection = new ArrayCollection(defs);
 				productsDisplay.dataProvider = defCollection;
+			}
+			public function add():void{
+				var pa:ProductAdd = new ProductAdd();
+				
+				//设置变量
+				
+				//打开
+				
 			}
 		]]>
 	</fx:Script>
@@ -104,7 +128,7 @@
 			<s:ComboBox id="searchCondition" width="300" fontSize="16" />
 			<s:Button label="搜索" />
 			<mx:Spacer width="100%"/>
-			<s:Button label="添加商品"/>
+			<s:Button label="添加商品" click="add()"/>
 		</s:HGroup>
 	
 		<mx:DataGrid id="productsDisplay" width="100%" height="100%" textAlign="center"/>

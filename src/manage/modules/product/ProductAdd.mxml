@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" title="添加新商品" creationComplete="init(event)">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			//校验器集合，用于最后校验
+			var validaters:Array = new Array();
+			
+			public function init(e:FlexEvent):void{
+				//根据定义集合生成表单
+				
+				
+			}
+			public function save():void{
+				
+			}
+			public function cancel():void{
+				
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup>
+		<mx:Form id="form">
+			
+		</mx:Form>
+
+	</s:VGroup>
+	<s:controlBarContent>
+		<s:Button label="保存" click="save()"/>
+		<s:Button label="取消" click="cancel()"/>
+	</s:controlBarContent>
+	<s:controlBarLayout>
+		<s:HorizontalLayout horizontalAlign="center" paddingLeft="10" paddingRight="10" paddingTop="7" paddingBottom="7" gap="20" />
+	</s:controlBarLayout>
+
+</s:Panel>

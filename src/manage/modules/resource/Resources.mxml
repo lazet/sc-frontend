@@ -35,7 +35,7 @@
 				productCategory.addEventListener(util.EventTypeDefine.PRODUCT_CATEGORY_DELETE_EVENT,onDeleteCategory);
 				
 				operationArea.container.put(RpcService.RPC_SERVICE, rpcClient)
-				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf","assets/greenHomePage.jpeg",true,false);
+				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf","assets/greenHomePage.jpeg",false,false);
 				//加载商品品类列表
 				c.dispatch(new RpcEvent("product/category/get",{"pageFrom":"1","size":"50"}));
 				//加载交易记录列表
@@ -58,7 +58,7 @@
 				
 			}
 			protected function onResourceCenter(e:MouseEvent):void{
-				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf","assets/greenHomePage.jpeg",true,false);
+				operationArea.open("manage/modules/resource/ResourcesMainPage.swf","资源情况","manage/modules/resource/ResourcesMainPage.swf","assets/greenHomePage.jpeg",false,false);
 			}
 			protected function onDeleteCategory(e:GeneralBundleEvent):void{
 				c.dispatch(new RpcEvent("product/category/delete",{"label":e.bundle["label"],"pageFrom":"1","size":"50"}));
