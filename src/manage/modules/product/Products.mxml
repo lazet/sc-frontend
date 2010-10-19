@@ -15,6 +15,7 @@
 			import mx.controls.dataGridClasses.DataGridColumn;
 			import mx.events.FlexEvent;
 			import mx.events.IndexChangedEvent;
+			import mx.managers.PopUpManager;
 			import mx.validators.Validator;
 			
 			import org.lcf.EventListenerModel;
@@ -89,6 +90,7 @@
 			}
 			public function onProductDefineFindAll(e:GeneralBundleEvent):void{
 				defs = e.bundle as Array;
+				this.c.put(ObjectNameDefine.PRODUCT_DEFINE,defs);
 				var columns:Array = new Array();
 				for (var i:int= 0; i< defs.length; i++){
 					if(!defs[i]["showInList"])
@@ -100,11 +102,11 @@
 					column.labelFunction = columnShow;
 					columns.push(column);
 				}
-				var column:DataGridColumn = new DataGridColumn();
-				column.headerText = "操作";
-				column.dataField = "操作";
-				column.itemRenderer = new ClassFactory(ProductOperateRenderer);
-				columns.push(column);
+				var columnOper:DataGridColumn = new DataGridColumn();
+				columnOper.headerText = "操作";
+				columnOper.dataField = "操作";
+				columnOper.itemRenderer = new ClassFactory(ProductOperateRenderer);
+				columns.push(columnOper);
 				productsDisplay.columns = columns;
 			}
 			public function onProductsFindByPage(e:GeneralBundleEvent):void{
@@ -114,11 +116,11 @@
 			}
 			public function add():void{
 				var pa:ProductAdd = new ProductAdd();
-				
-				//设置变量
-				
+				this.c.put("product.add",pa);
 				//打开
-				
+				PopUpManager.addPopUp(pa,this,true);
+				PopUpManager.centerPopUp(pa);
+				PopUpManager.bringToFront(pa);
 			}
 		]]>
 	</fx:Script>

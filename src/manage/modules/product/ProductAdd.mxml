@@ -1,27 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx" title="添加新商品" creationComplete="init(event)">
+		 xmlns:mx="library://ns.adobe.com/flex/mx" title="添加新商品" creationComplete="init(event)" implements="org.lcf.IEventPrefer">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
-			import mx.events.FlexEvent;
+			import json.JParser;
 			
+			import mx.collections.ArrayCollection;
+			import mx.containers.FormItem;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.CurrencyValidator;
+			import mx.validators.CurrencyValidatorAlignSymbol;
+			import mx.validators.NumberValidator;
+			import mx.validators.NumberValidatorDomainType;
+			import mx.validators.RegExpValidator;
+			import mx.validators.StringValidator;
+			import mx.validators.Validator;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.IContainer;
+			import org.lcf.IEventPrefer;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			
+			import spark.components.ComboBox;
+			import spark.components.DropDownList;
+			import spark.components.TextInput;
+			
+			import util.ObjectNameDefine;
+			
+			//状态：初始:initial,编辑中:editing，提交中saving，保存完毕:saved
+			protected var status:String = "initial";
+			//保存后是否需要追加
+			protected var needAdd:Boolean = false;
 			//校验器集合，用于最后校验
-			var validaters:Array = new Array();
+			protected var validaters:Array = new Array();
+			//数据对象集合
+			protected var dataItems:Array = new Array();
+			
+			//容器
+			[Inject(name="container")]
+			public var c:IContainer;
+			
+			//商品定义
+			protected var pd:Array
+			
+			//需要更新数据源：品类数据对象集合
+			protected var productCategoryArray:Array = new Array();
 			
 			public function init(e:FlexEvent):void{
-				//根据定义集合生成表单
+				//获取商品定义
+				pd = c.get(ObjectNameDefine.PRODUCT_DEFINE) as Array;
 				
-				
+				this.c.dispatch(new RpcEvent("product/category/get",{"pageFrom":"1","size":"50"}));
+				//根据定义集合生成单列表单
+				for(var i:int = 0; i < pd.length; i++){
+					var fi:FormItem = new FormItem();
+					fi.label = pd[i]["itemName"];
+					var required:Boolean = (pd[i]["required"]);
+					fi.required = required;
+					
+					if(pd[i]["dataType"] == "String"){
+						var ti:TextInput = new TextInput();
+						ti.id = fi.label;
+						fi.addElement(ti);
+						var minLen:int = pd[i]["limits"]["minLen"];
+						var maxLen:int = pd[i]["limits"]["maxLen"];
+						var regExpValidator:RegExpValidator = new RegExpValidator();
+						regExpValidator.source = ti;
+						regExpValidator.property = "text";				
+						regExpValidator.required = required;
+						regExpValidator.requiredFieldError = "不能为空";
+						regExpValidator.expression = "^[\u4e00-\u9fa5,\\w]{" + minLen + "," + maxLen + "}$";
+						regExpValidator.noMatchError = "输入内容不正确";
+						
+						validaters.push(regExpValidator);
+					}else if(pd[i]["dataType"] == "Integer"){
+						var intTi:TextInput = new TextInput();
+						intTi.id = fi.label;
+						fi.addElement(intTi);
+						var minValue:int = pd[i]["limits"]["minValue"];
+						var maxValue:int = pd[i]["limits"]["maxValue"];
+						var intValidator:mx.validators.NumberValidator = new NumberValidator();
+						intValidator.source = intTi;
+						intValidator.property = "text";				
+						intValidator.required = required;
+						intValidator.requiredFieldError = "不能为空";
+						intValidator.allowNegative(true);
+						intValidator.domain = NumberValidatorDomainType.INT;
+						intValidator.integerError = "输入值必须为整数";
+						intValidator.minValue = Number(minValue);
+						intValidator.maxValue = Number(maxValue);
+						intValidator.exceedsMaxError = "输入值必须小于或等于" + maxValue;
+						intValidator.lowerThanMinError = "输入值必须大于或等于" + minValue;
+						
+						validaters.push(intValidator);
+					}else if(pd[i]["dataType"] == "Money"){
+						var moneyTi:TextInput = new TextInput();
+						moneyTi.setStyle("textAlign","right");
+						moneyTi.id = fi.label;
+						fi.addElement(moneyTi);
+						var minMoney:int = pd[i]["limits"]["minValue"];
+						var maxMoney:int = pd[i]["limits"]["maxValue"];
+						var moneyValidator:CurrencyValidator = new CurrencyValidator();
+						moneyValidator.source = moneyTi;
+						moneyValidator.property = "text";				
+						moneyValidator.required = required;
+						moneyValidator.requiredFieldError = "不能为空";
+						moneyValidator.negativeError = "不允许为负数";
+						moneyValidator.alignSymbol = CurrencyValidatorAlignSymbol.RIGHT;
+						moneyValidator.minValue = Number(minMoney);
+						moneyValidator.maxValue = Number(maxMoney);
+						moneyValidator.exceedsMaxError = "输入值必须小于或等于" + maxMoney;
+						moneyValidator.lowerThanMinError = "输入值必须大于或等于" + minMoney;
+						moneyValidator.precision = 2;
+						moneyValidator.precisionError = "小数点后之后应只有两位";
+						moneyValidator.invalidCharError = "输入值中包含无效字符";
+						moneyValidator.invalidFormatCharsError = "输入值中包含无效字符";
+						validaters.push(moneyValidator);
+					}else if(pd[i]["dataType"] == "SelectOne"){
+						var soTi:DropDownList = new DropDownList();
+						
+						soTi.id = fi.label;
+						fi.addElement(soTi);
+						var values:Array = pd[i]["limits"]["values"];
+						if(values.length <=  0){
+							Alert.show(pd[i]["itemName"] + "字段定义的值集数量必须大于1个");
+							continue;
+						}
+						soTi.dataProvider = new ArrayCollection(values);
+						var strExpValidator:StringValidator = new StringValidator();
+						strExpValidator.source = soTi;
+						strExpValidator.property = "text";				
+						strExpValidator.required = required;
+						strExpValidator.requiredFieldError = "不能为空";
+						
+						validaters.push(strExpValidator);
+					}else if(pd[i]["dataType"] == "ProductCategory"){
+						var pcCb:ComboBox = new ComboBox();
+						pcCb.openOnInput = true;
+						pcCb.id = fi.label;
+						fi.addElement(pcCb);
+						productCategoryArray.push(pcCb);
+						var strExpValidator:StringValidator = new StringValidator();
+						strExpValidator.source = pcCb;
+						strExpValidator.property = "text";				
+						strExpValidator.required = required;
+						strExpValidator.requiredFieldError = "不能为空";
+						
+						validaters.push(strExpValidator);	
+					}
+					else if(pd[i]["dataType"] == "currentUser" || pd[i]["dataType"] == "now"){
+						continue;
+					}
+					form.addElement(fi);
+				}
 			}
+			
+			
 			public function save():void{
+				needAdd = false;
+				saveInternal();
+			}
+			public function saveAndAdd():void{
+				needAdd = true;
+			}
+			protected function saveInternal():void{
+				//验证
+				
+				//收集参数
+				
+				//发送保存
 				
 			}
 			public function cancel():void{
-				
+				PopUpManager.removePopUp(this);
+			}
+			public function onProductDefineFindAll(e:GeneralBundleEvent):void{
+				for(var i:int = 0; i < productCategoryArray.length; i++){
+					var pc:ComboBox = productCategoryArray[i] as ComboBox;
+					pc.dataProvider = new ArrayCollection(e.bundle as Array);
+				}
+			}
+			public function  get preferEventListeners():Array
+			{
+				var productDefine:EventListenerModel = new EventListenerModel("getProductCategory.success",onProductDefineFindAll);
+
+				return [productDefine];
 			}
 		]]>
 	</fx:Script>
@@ -33,6 +204,7 @@
 	</s:VGroup>
 	<s:controlBarContent>
 		<s:Button label="保存" click="save()"/>
+		<s:Button label="保存并添加" click="saveAndAdd()"/>
 		<s:Button label="取消" click="cancel()"/>
 	</s:controlBarContent>
 	<s:controlBarLayout>
