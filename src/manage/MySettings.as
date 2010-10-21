@@ -1,5 +1,6 @@
 package manage
 {
+	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.system.IME;
 	
@@ -131,7 +132,7 @@ package manage
 			this.c.dispatch(new RpcEvent("mySettings/save",arg));
 			
 		}
-		public function onCancel(e:MouseEvent):void{
+		public function onCancel(e:Event):void{
 			PopUpManager.removePopUp(this);
 			this.oldPass.text = "";
 			this.newPass.text = "";

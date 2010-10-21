@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx" title="添加新商品" creationComplete="init(event)" implements="org.lcf.IEventPrefer">
+		 xmlns:mx="library://ns.adobe.com/flex/mx" title="添加新商品"  creationComplete="init(event)" 
+		 implements="org.lcf.IEventPrefer" close="cancel()">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
+			import flash.system.IME;
+			
 			import json.JParser;
 			
 			import mx.collections.ArrayCollection;
 			import mx.containers.FormItem;
 			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
 			import mx.events.FlexEvent;
 			import mx.managers.PopUpManager;
 			import mx.validators.CurrencyValidator;
@@ -34,8 +39,10 @@
 			import spark.components.TextInput;
 			
 			import util.ObjectNameDefine;
+			import util.ProductCagegoryValidate;
+			import util.SelectOneValidate;
 			
-			//状态：初始:initial,编辑中:editing，提交中saving，保存完毕:saved
+			//状态：初始:initial,提交中saving
 			protected var status:String = "initial";
 			//保存后是否需要追加
 			protected var needAdd:Boolean = false;
@@ -81,6 +88,7 @@
 						regExpValidator.noMatchError = "输入内容不正确";
 						
 						validaters.push(regExpValidator);
+						dataItems.push(ti);
 					}else if(pd[i]["dataType"] == "Integer"){
 						var intTi:TextInput = new TextInput();
 						intTi.id = fi.label;
@@ -101,6 +109,7 @@
 						intValidator.lowerThanMinError = "输入值必须大于或等于" + minValue;
 						
 						validaters.push(intValidator);
+						dataItems.push(intTi);
 					}else if(pd[i]["dataType"] == "Money"){
 						var moneyTi:TextInput = new TextInput();
 						moneyTi.setStyle("textAlign","right");
@@ -123,10 +132,12 @@
 						moneyValidator.precisionError = "小数点后之后应只有两位";
 						moneyValidator.invalidCharError = "输入值中包含无效字符";
 						moneyValidator.invalidFormatCharsError = "输入值中包含无效字符";
+						
 						validaters.push(moneyValidator);
+						dataItems.push(moneyTi);
 					}else if(pd[i]["dataType"] == "SelectOne"){
 						var soTi:DropDownList = new DropDownList();
-						
+						soTi.prompt = "请选择一项";
 						soTi.id = fi.label;
 						fi.addElement(soTi);
 						var values:Array = pd[i]["limits"]["values"];
@@ -135,26 +146,29 @@
 							continue;
 						}
 						soTi.dataProvider = new ArrayCollection(values);
-						var strExpValidator:StringValidator = new StringValidator();
-						strExpValidator.source = soTi;
-						strExpValidator.property = "text";				
-						strExpValidator.required = required;
-						strExpValidator.requiredFieldError = "不能为空";
+						var soValidater:SelectOneValidate = new SelectOneValidate();
+						soValidater.soInput = soTi;
+						soValidater.required = required;
+						soValidater.requiredFieldError = "不能为空";
 						
-						validaters.push(strExpValidator);
+						validaters.push(soValidater);
+						dataItems.push(soTi);
 					}else if(pd[i]["dataType"] == "ProductCategory"){
 						var pcCb:ComboBox = new ComboBox();
+						pcCb.addEventListener(FocusEvent.FOCUS_IN,function(){IME.enabled = true});
+						pcCb.toolTip = "多个以空格隔开";
+						fi.label += "(多个以空格隔开)";
 						pcCb.openOnInput = true;
 						pcCb.id = fi.label;
 						fi.addElement(pcCb);
 						productCategoryArray.push(pcCb);
-						var strExpValidator:StringValidator = new StringValidator();
-						strExpValidator.source = pcCb;
-						strExpValidator.property = "text";				
-						strExpValidator.required = required;
-						strExpValidator.requiredFieldError = "不能为空";
+						var pcValidator:ProductCagegoryValidate = new ProductCagegoryValidate();
+						pcValidator.pcInput = pcCb;
+						pcValidator.required = required;
+						pcValidator.requiredFieldError = "不能为空";
 						
-						validaters.push(strExpValidator);	
+						validaters.push(pcValidator);
+						dataItems.push(pcCb);
 					}
 					else if(pd[i]["dataType"] == "currentUser" || pd[i]["dataType"] == "now"){
 						continue;
@@ -170,17 +184,91 @@
 			}
 			public function saveAndAdd():void{
 				needAdd = true;
+				saveInternal();
+				
 			}
-			protected function saveInternal():void{
+			public function clean():void{
+				//清理数据对象
+				for(var i:int = 0;i< dataItems.length; i++){
+					if(dataItems[i] is TextInput){
+						var di:TextInput = dataItems[i] as TextInput;
+						di.text = '';
+					}
+					else if (dataItems[i] is DropDownList){
+						var ddl:DropDownList = dataItems[i] as DropDownList;
+						ddl.selectedIndex = -1;
+					}
+					else if (dataItems[i] is ComboBox){
+						var cb:ComboBox = dataItems[i] as ComboBox;
+						cb.selectedIndex = -1;
+						cb.textInput.text = '';
+					}
+				}
+				this.status = "initial";
+			}
+			protected function saveInternal():Boolean{
+				if(status == "saving"){
+					Alert.show("正在保存中，请不要重复提交","保存提示");
+					return false;
+				}
 				//验证
-				
+				var results:Array = Validator.validateAll(validaters);
+				if(results.length > 0){
+					return false;
+				}
+				status = "saving";
 				//收集参数
-				
+				var arg:Object = new Object();
+				for(var i:int = 0;i< dataItems.length; i++){
+					if(dataItems[i] is TextInput){
+						var di:TextInput = dataItems[i] as TextInput;
+						arg[di.id] = di.text;
+					}
+					else if (dataItems[i] is DropDownList){
+						var ddl:DropDownList = dataItems[i] as DropDownList;
+						arg[ddl.id] = ddl.selectedItem;
+					}
+					else if (dataItems[i] is ComboBox){
+						var cb:ComboBox = dataItems[i] as ComboBox;
+						arg[cb.id] = cb.textInput.text;
+					}
+				}
 				//发送保存
+				this.c.dispatch(new RpcEvent("product/add", arg));
+				return true;
 				
 			}
 			public function cancel():void{
+				//检查是否修改过
+				for(var i:int = 0;i< dataItems.length; i++){
+					if(dataItems[i] is TextInput){
+						var di:TextInput = dataItems[i] as TextInput;
+						if(di.text != ""){
+							Alert.show("信息未保存，确定要关闭吗？","系统提示",Alert.OK | Alert.CANCEL,this,onExit);
+							return;
+						}
+					}
+					else if (dataItems[i] is DropDownList){
+						var ddl:DropDownList = dataItems[i] as DropDownList;
+						if(ddl.selectedIndex != -1){
+							Alert.show("信息未保存，确定要关闭吗？","系统提示",Alert.OK | Alert.CANCEL,this,onExit);
+							return;
+						}
+					}
+					else if (dataItems[i] is ComboBox){
+						var cb:ComboBox = dataItems[i] as ComboBox;
+						if( cb.textInput.text != ""){
+							Alert.show("信息未保存，确定要关闭吗？","系统提示",Alert.OK | Alert.CANCEL,this,onExit);
+							return;
+						}
+					}
+				}
 				PopUpManager.removePopUp(this);
+			}
+			protected function onExit(e:CloseEvent):void{
+				if(e.detail == Alert.OK){
+					PopUpManager.removePopUp(this);
+				}
 			}
 			public function onProductDefineFindAll(e:GeneralBundleEvent):void{
 				for(var i:int = 0; i < productCategoryArray.length; i++){
@@ -190,9 +278,22 @@
 			}
 			public function  get preferEventListeners():Array
 			{
-				var productDefine:EventListenerModel = new EventListenerModel("getProductCategory.success",onProductDefineFindAll);
-
-				return [productDefine];
+				var getProductCategorySuccess:EventListenerModel = new EventListenerModel("getProductCategory.success",onProductDefineFindAll);
+				var productAddSuccess:EventListenerModel = new EventListenerModel("addProduct.success",onProductAddSuccess);
+				var productAddFailed:EventListenerModel = new EventListenerModel("addProduct.failed",onProductAddFailed);
+				return [getProductCategorySuccess,productAddSuccess,productAddFailed];
+			}
+			public function onProductAddSuccess(e:GeneralBundleEvent):void{
+				if(this.needAdd){
+					this.clean()
+				}
+				else{
+					PopUpManager.removePopUp(this);
+				}
+			}
+			public function onProductAddFailed(e:GeneralBundleEvent):void{
+				this.status = "initial";
+				Alert.show("" + e.bundle, "保存失败,原因如下：");
 			}
 		]]>
 	</fx:Script>
@@ -211,4 +312,4 @@
 		<s:HorizontalLayout horizontalAlign="center" paddingLeft="10" paddingRight="10" paddingTop="7" paddingBottom="7" gap="20" />
 	</s:controlBarLayout>
 
-</s:Panel>
+</s:TitleWindow>

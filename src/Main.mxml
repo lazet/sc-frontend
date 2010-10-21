@@ -5,13 +5,16 @@
 			   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="appInit(event)">
 	<fx:Script>
 		<![CDATA[
-			
 			import mx.core.FlexGlobals;
+			import mx.core.IFlexDisplayObject;
 			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
 			
 			import rpc.RpcService;
 			
 			import sign.SignOn;
+			
+			import util.ObjectNameDefine;
 			
 			protected function appInit(event:FlexEvent):void
 			{
@@ -20,11 +23,19 @@
 				var remoteUrl:String = "http://localhost:8080/tcs/api/";//FlexGlobals.topLevelApplication.url
 				mainView.container.put(RpcService.RPC_SERVICE, new RpcService(remoteUrl));
 				mainView.container.put(SysInfo.SYSTEM_INFO,new SysInfo(remoteUrl));
+				mainView.container.put(util.ObjectNameDefine.APP,this);
 				//加载登录页面
 				var signOn:SignOn = new SignOn();
 				mainView.open("signOn","登录",signOn);
 			}
-
+			public function popupAndCenter(win:IFlexDisplayObject):void{
+				PopUpManager.addPopUp(win,this,true);
+				PopUpManager.centerPopUp(win);
+				PopUpManager.bringToFront(win);
+			}
+			public function close(win:IFlexDisplayObject):void{
+				PopUpManager.removePopUp(win);
+			}
 		]]>
 	</fx:Script>
 	<fx:Declarations>

@@ -31,7 +31,7 @@ package rpc
 			client.resultFormat = "text";
 			
 			client.url = prefix + re.url;
-			client.method = re.method;
+			//client.method = "POST";
 			client.addEventListener(ResultEvent.RESULT,onCall);
 			client.addEventListener(FaultEvent.FAULT,onError);
 			client.send(re.args);

@@ -7,9 +7,13 @@
 
 	<fx:Script>
 		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import json.JParser;
+			
 			import org.lcf.EventListenerModel;
 			import org.lcf.util.GeneralBundleEvent;
-			import json.JParser;
+			
 			import rpc.RpcEvent;
 			
 			protected function button1_clickHandler(event:MouseEvent):void
@@ -29,7 +33,7 @@
 				this.c.dispatch(new RpcEvent("data/" + operType.selectedItem,arg));
 			}
 			protected function onReceiveResult(e:GeneralBundleEvent):void{
-				result.text = JParser.encode(e.bundle) ;
+				result.text = JSON.encode(e.bundle) ;
 			}
 		]]>
 	</fx:Script>

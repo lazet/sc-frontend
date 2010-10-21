@@ -7,15 +7,12 @@ package rpc
 	public class RpcEvent extends Event
 	{
 		static public var RPC_EVENT:String = "RPC_EVENT";
-		public function RpcEvent(url:String,args:Object,method:String="GET"){
+		public function RpcEvent(url:String,args:Object){
 			super(RPC_EVENT);
 			this.url = url;
-			this.method = method;
 			this.args = args;
 		}
 		public var url:String;
-		
-		public var method:String;
 		
 		public var args:Object;
 	}

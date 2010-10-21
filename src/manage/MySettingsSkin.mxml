@@ -6,6 +6,12 @@
 	<fx:Metadata>
 		[HostComponent("manage.MySettings")]
 	</fx:Metadata>
+<!--	<s:states>
+		<s:State name="normal"/>
+		<s:State name="disabled"/>
+		<s:State name="inactiveWithControlBar"/>
+		<s:State name="inactive"/>
+	</s:states>-->
 	<fx:Declarations>
 		<mx:StringValidator id="oldPassValidate" property="text" required="true" source="{oldPass}" maxLength="20" minLength="1" requiredFieldError="旧密码不能为空" tooLongError="旧密码不能超过20位" tooShortError="旧密码不能小于2位"/>
 		<mx:StringValidator id="newPassValidate" property="text" required="true" source="{newPass}" maxLength="20" minLength="1" requiredFieldError="新密码不能为空" tooLongError="新密码不能超过20位" tooShortError="新密码不能小于2位"/>

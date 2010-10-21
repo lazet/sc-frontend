@@ -10,6 +10,8 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.controls.dataGridClasses.DataGridColumn;
@@ -30,12 +32,17 @@
 			import util.EventTypeDefine;
 			import util.ObjectNameDefine;
 			
+			
 			protected var defs:Array;
+			
+			protected var pageFrom:int = 1;
+			protected var size = 50;
 			
 			protected function onInit(event:FlexEvent):void{
 				//注册列表删除和编辑监听事件
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_DELETE_EVENT,onDelete);
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_EDIT_EVENT,onEdit);
+				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function(){IME.enabled = true});
 				//获取商品定义 
 				var arg:Object = new Object();
 				arg["collection"] = "productDefine";
@@ -45,20 +52,10 @@
 				//获取商品分类
 				var productCategory:String = String(this.c.get(ObjectNameDefine.CURRENT_PRODUCT_CATEGORY));
 				
-				//查询商品，每页50
-				var pArg:Object = new Object();
-				pArg["collection"] = "product";
-				if("全部" == productCategory || productCategory == null || productCategory == "")
-					pArg["condition"] = "{}";
-				else{
-					pArg["condition"] = "{\"品类\":\"" + productCategory + "\"}";
+				if(!("全部" == productCategory || productCategory == null || productCategory == "")){
 					searchCondition.textInput.text = "品类:" + productCategory;
 				}
-				pArg["pageFrom"] = 1;
-				pArg["size"] = 50;
-				pArg["order"] = "{\"商品名称\":1}";
-				this.c.dispatch(new RpcEvent("data/findByPage",pArg));
-				
+				search();	
 			}
 			public function onDelete(e:GeneralBundleEvent):void{
 				Alert.show(e.bundle["商品名称"]);
@@ -70,7 +67,45 @@
 			{
 				var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
 				var products:EventListenerModel = new EventListenerModel("product.findByPage",onProductsFindByPage);
-				return [productDefine,products];
+				var productAddSuccess:EventListenerModel = new EventListenerModel("addProduct.success",onProductAddSuccess);
+				return [productDefine,products,productAddSuccess];
+			}
+			public function onProductAddSuccess(e:GeneralBundleEvent):void{
+				search();
+			}
+			public function search():void{
+				//查询商品，每页50
+				var pArg:Object = new Object();
+				pArg["collection"] = "product";
+				//解析查询字符串
+				var condition:Object = {};
+				var allKeywordsCondition:Object = {};
+				
+				var sc:String = searchCondition.textInput.text
+				var keywords:Array = sc.split(" ");
+				
+				for(var i:int = keywords.length -1 ; i >= 0; i--){
+					if((keywords[i] as String) == ""){
+						keywords.splice(i,1);
+						continue;
+					}
+					var pair:Array = (keywords[i] as String).split(":");
+					if(pair.length > 1){
+						keywords.splice(i,1);
+					}
+					if(pair.length = 2){
+						condition[pair[0]] = pair[1]; 
+					}
+				}
+				if(keywords.length > 0){
+					allKeywordsCondition["$all"] = keywords;
+					condition["keywords"] = allKeywordsCondition;
+				}
+				pArg["condition"] = JSON.encode(condition);
+				pArg["pageFrom"] = this.pageFrom;
+				pArg["size"] = this.size;
+				pArg["order"] = "{\"创建时间\":-1}";
+				this.c.dispatch(new RpcEvent("data/findByPage",pArg));
 			}
 			/**
 			 * 展示一列，如果是数组，则转换为字符串
@@ -117,6 +152,8 @@
 			public function add():void{
 				var pa:ProductAdd = new ProductAdd();
 				this.c.put("product.add",pa);
+				//获得应用主窗口，做为父窗口
+				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
 				//打开
 				PopUpManager.addPopUp(pa,this,true);
 				PopUpManager.centerPopUp(pa);
@@ -128,7 +165,7 @@
 		<s:HGroup verticalAlign="middle" width="600" gap="10">
 			<s:Label paddingLeft="120" text=""/> 
 			<s:ComboBox id="searchCondition" width="300" fontSize="16" />
-			<s:Button label="搜索" />
+			<s:Button label="搜索" click="search()"/>
 			<mx:Spacer width="100%"/>
 			<s:Button label="添加商品" click="add()"/>
 		</s:HGroup>

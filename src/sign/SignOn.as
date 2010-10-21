@@ -22,6 +22,8 @@ package sign
 	import spark.components.TextInput;
 	import spark.components.supportClasses.SkinnableComponent;
 	
+	import util.ObjectNameDefine;
+	
 	public class SignOn extends SkinnableComponent implements org.lcf.IComponent
 	{
 		public static var SIGN_ON_SUCCESS_EVENT:String = "signOn.success";
@@ -77,7 +79,7 @@ package sign
 			//清理登录信息
 			password.text = '';
 			//切换到管理页面
-			this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,"manageView","管理主界面",new ManagerView()));
+			this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.MANAGE_VIEW,"管理主界面",new ManagerView()));
 			
 		}
 		public function onSignOnFailed(e:GeneralBundleEvent):void{
