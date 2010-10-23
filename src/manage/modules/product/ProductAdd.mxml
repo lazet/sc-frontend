@@ -84,7 +84,7 @@
 						regExpValidator.property = "text";				
 						regExpValidator.required = required;
 						regExpValidator.requiredFieldError = "不能为空";
-						regExpValidator.expression = "^[\u4e00-\u9fa5,\\w]{" + minLen + "," + maxLen + "}$";
+						regExpValidator.expression = "^[\u4e00-\u9fa5\\w]{" + minLen + "," + maxLen + "}$";
 						regExpValidator.noMatchError = "输入内容不正确";
 						
 						validaters.push(regExpValidator);
@@ -113,7 +113,8 @@
 					}else if(pd[i]["dataType"] == "Money"){
 						var moneyTi:TextInput = new TextInput();
 						moneyTi.setStyle("textAlign","right");
-						moneyTi.id = fi.label;
+						fi.label += "(元)"
+						moneyTi.id = pd[i]["itemName"];
 						fi.addElement(moneyTi);
 						var minMoney:int = pd[i]["limits"]["minValue"];
 						var maxMoney:int = pd[i]["limits"]["maxValue"];
@@ -147,6 +148,8 @@
 						}
 						soTi.dataProvider = new ArrayCollection(values);
 						var soValidater:SelectOneValidate = new SelectOneValidate();
+						soValidater.source = soTi;
+						soValidater.property = "selectedIndex";
 						soValidater.soInput = soTi;
 						soValidater.required = required;
 						soValidater.requiredFieldError = "不能为空";
@@ -159,12 +162,15 @@
 						pcCb.toolTip = "多个以空格隔开";
 						fi.label += "(多个以空格隔开)";
 						pcCb.openOnInput = true;
-						pcCb.id = fi.label;
+						pcCb.id = pd[i]["itemName"];;
 						fi.addElement(pcCb);
 						productCategoryArray.push(pcCb);
 						var pcValidator:ProductCagegoryValidate = new ProductCagegoryValidate();
+						pcValidator.source = pcCb;
+						pcValidator.property = "selectedIndex";
 						pcValidator.pcInput = pcCb;
-						pcValidator.required = required;
+						pcValidator.pcInputError = "不能包含符号"
+						pcValidator.isNeed = required;
 						pcValidator.requiredFieldError = "不能为空";
 						
 						validaters.push(pcValidator);

@@ -15,7 +15,7 @@ package util
 			super();
 		}
 		override protected function doValidation(value:Object):Array{
-			var results:Array = new Array();
+			var results:Array = super.doValidation(value);
 			if(this.soInput.selectedIndex == -1  && this.required){
 				results.push(new ValidationResult(
 					true, null, "requiredError",

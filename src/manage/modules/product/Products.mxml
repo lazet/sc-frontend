@@ -29,25 +29,28 @@
 			import spark.components.DataGroup;
 			import spark.components.List;
 			
+			import util.Consts;
 			import util.EventTypeDefine;
 			import util.ObjectNameDefine;
 			
-			
 			protected var defs:Array;
-			
+			[Bindable]
 			protected var pageFrom:int = 1;
-			protected var size = 50;
+			protected var size:int = 20;
+			[Bindable]
+			protected var total:int = 0;
+			protected var arg:* = {};
 			
 			protected function onInit(event:FlexEvent):void{
 				//注册列表删除和编辑监听事件
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_DELETE_EVENT,onDelete);
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_EDIT_EVENT,onEdit);
-				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function(){IME.enabled = true});
+				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
 				//获取商品定义 
 				var arg:Object = new Object();
-				arg["collection"] = "productDefine";
-				arg["condition"] = "{}";
-				arg["order"] = "{\"order\":1}";
+				arg[Consts.COLLECTION] = "productDefine";
+				arg[Consts.CONDITION] = "{}";
+				arg[Consts.ORDER_BY] = "{\"order\":1}";
 				this.c.dispatch(new RpcEvent("data/findAll",arg));
 				//获取商品分类
 				var productCategory:String = String(this.c.get(ObjectNameDefine.CURRENT_PRODUCT_CATEGORY));
@@ -55,10 +58,14 @@
 				if(!("全部" == productCategory || productCategory == null || productCategory == "")){
 					searchCondition.textInput.text = "品类:" + productCategory;
 				}
-				search();	
+				search();
 			}
 			public function onDelete(e:GeneralBundleEvent):void{
-				Alert.show(e.bundle["商品名称"]);
+				var pArg:Object = new Object();
+				pArg[Consts.COLLECTION] = "product";
+				pArg[Consts.CONDITION] = JSON.encode({"商品名称":e.bundle["商品名称"]});
+				this.c.dispatch(new RpcEvent("data/delete",pArg));
+				
 			}
 			public function onEdit(e:GeneralBundleEvent):void{
 				Alert.show(e.bundle["商品名称"]);
@@ -68,15 +75,17 @@
 				var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
 				var products:EventListenerModel = new EventListenerModel("product.findByPage",onProductsFindByPage);
 				var productAddSuccess:EventListenerModel = new EventListenerModel("addProduct.success",onProductAddSuccess);
-				return [productDefine,products,productAddSuccess];
+				var productDeleteSuccess:EventListenerModel = new EventListenerModel("product.delete",refreshCurrentPage);
+				return [productDefine,products,productAddSuccess,productDeleteSuccess];
 			}
 			public function onProductAddSuccess(e:GeneralBundleEvent):void{
 				search();
 			}
 			public function search():void{
+				this.pageFrom = 1;
 				//查询商品，每页50
 				var pArg:Object = new Object();
-				pArg["collection"] = "product";
+				pArg[Consts.COLLECTION] = "product";
 				//解析查询字符串
 				var condition:Object = {};
 				var allKeywordsCondition:Object = {};
@@ -93,7 +102,7 @@
 					if(pair.length > 1){
 						keywords.splice(i,1);
 					}
-					if(pair.length = 2){
+					if(pair.length == 2){
 						condition[pair[0]] = pair[1]; 
 					}
 				}
@@ -101,10 +110,11 @@
 					allKeywordsCondition["$all"] = keywords;
 					condition["keywords"] = allKeywordsCondition;
 				}
-				pArg["condition"] = JSON.encode(condition);
-				pArg["pageFrom"] = this.pageFrom;
-				pArg["size"] = this.size;
-				pArg["order"] = "{\"创建时间\":-1}";
+				pArg[Consts.CONDITION] = JSON.encode(condition);
+				pArg[Consts.PAGE_FROM] = this.pageFrom;
+				pArg[Consts.PAGE_SIZE] = this.size;
+				pArg[Consts.ORDER_BY] = "{\"创建时间\":-1}";
+				this.arg = pArg;
 				this.c.dispatch(new RpcEvent("data/findByPage",pArg));
 			}
 			/**
@@ -120,7 +130,11 @@
 					return label;
 				}
 				else{
-					return String(item[column.dataField]);
+					if(column.headerText.indexOf("(元)") > 0 && item[column.dataField] != null && item[column.dataField] != "")
+						return (Number(item[column.dataField])/100.00).toFixed(2);
+					else
+						return String(item[column.dataField]);
+					
 				}
 			}
 			public function onProductDefineFindAll(e:GeneralBundleEvent):void{
@@ -131,7 +145,11 @@
 					if(!defs[i]["showInList"])
 						continue;
 					var column:DataGridColumn = new DataGridColumn();
-					column.headerText = defs[i]["itemName"];
+					if(defs[i]["dataType"] == "Money"){
+						column.headerText = defs[i]["itemName"] + "(元)";
+					}else{
+						column.headerText = defs[i]["itemName"];
+					}
 					column.dataField = defs[i]["itemName"];
 					column.dataTipFunction = columnShow;
 					column.labelFunction = columnShow;
@@ -145,7 +163,24 @@
 				productsDisplay.columns = columns;
 			}
 			public function onProductsFindByPage(e:GeneralBundleEvent):void{
-				var defs:Array = e.bundle as Array;
+				this.total = e.bundle[Consts.TOTAL] as int;
+				if(this.total > this.pageFrom * this.size){
+					nextP.enabled = true;
+					nextP.setStyle("textDecoration","underline");
+				}
+				else{
+					nextP.enabled = false;
+					nextP.setStyle("textDecoration","none");
+				}
+				if(this.pageFrom > 1){
+					lastP.enabled = true;
+					lastP.setStyle("textDecoration","underline");
+				}
+				else{
+					lastP.enabled = false;
+					lastP.setStyle("textDecoration","none");
+				}
+				var defs:Array = e.bundle[Consts.DATASET] as Array;
 				var defCollection:ArrayCollection = new ArrayCollection(defs);
 				productsDisplay.dataProvider = defCollection;
 			}
@@ -159,6 +194,22 @@
 				PopUpManager.centerPopUp(pa);
 				PopUpManager.bringToFront(pa);
 			}
+			public function refreshCurrentPage(e:GeneralBundleEvent):void{
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function lastPage():void{
+				if(this.pageFrom <= 1) return;
+				this.pageFrom --;
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function nextPage():void{
+				if(this.total <= this.pageFrom * this.size) return;
+				this.pageFrom ++;
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
 		]]>
 	</fx:Script>
 	<s:VGroup  width="100%" height="100%" >
@@ -171,12 +222,13 @@
 		</s:HGroup>
 	
 		<mx:DataGrid id="productsDisplay" width="100%" height="100%" textAlign="center"/>
-		<s:HGroup  width="600">
-			<s:Label text="共计\{\}种商品" paddingLeft="125"/>
+		<s:HGroup  width="600" verticalAlign="top">
+			<s:Label text="共计\{{total}\}种商品" paddingLeft="125"/>
 			<mx:Spacer width="100%"/>
-			<s:Label text="上一页" toolTip="上一页"/>
-			<s:Label id="currentPageBottom" text="1"/>
-			<s:Label text="下一页" toolTip="下一页" textDecoration="underline"/>	
+			<s:Label text="共{Math.ceil(total*1.0/size)}页 " paddingLeft="125"/>
+			<s:Label id = "lastP" text="上一页" toolTip="上一页" click="lastPage()" enabled="false"/>
+			<s:Label id="currentPageBottom" text="{pageFrom}"/>
+			<s:Label id = "nextP" text="下一页" toolTip="下一页" textDecoration="underline"  click="nextPage()" enabled="false"/>	
 		</s:HGroup>
 		
 	</s:VGroup>
