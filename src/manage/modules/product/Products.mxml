@@ -15,6 +15,7 @@
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.CloseEvent;
 			import mx.events.FlexEvent;
 			import mx.events.IndexChangedEvent;
 			import mx.managers.PopUpManager;
@@ -41,6 +42,8 @@
 			protected var total:int = 0;
 			protected var arg:* = {};
 			
+			var currentData:*;
+			
 			protected function onInit(event:FlexEvent):void{
 				//注册列表删除和编辑监听事件
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_DELETE_EVENT,onDelete);
@@ -61,25 +64,36 @@
 				search();
 			}
 			public function onDelete(e:GeneralBundleEvent):void{
-				var pArg:Object = new Object();
-				pArg[Consts.COLLECTION] = "product";
-				pArg[Consts.CONDITION] = JSON.encode({"商品名称":e.bundle["商品名称"]});
-				this.c.dispatch(new RpcEvent("data/delete",pArg));
-				
+				this.currentData = e.bundle;
+				Alert.show("确定要删除" +e.bundle["商品名称"] + "吗？","系统提示",Alert.OK | Alert.CANCEL,this,toDelete,null,Alert.CANCEL);
+			}
+			public function toDelete(e:CloseEvent):void{
+				if(e.detail == Alert.OK){
+					var pArg:Object = new Object();
+					pArg[Consts.COLLECTION] = "product";
+					pArg[Consts.CONDITION] = JSON.encode({"商品名称":this.currentData["商品名称"]});
+					this.c.dispatch(new RpcEvent("data/delete",pArg));
+				}				
 			}
 			public function onEdit(e:GeneralBundleEvent):void{
-				Alert.show(e.bundle["商品名称"]);
+				var pa:ProductUpdate = new ProductUpdate();
+				this.c.put("product.update.data",e.bundle);
+				this.c.put("product.update",pa);
+				//获得应用主窗口，做为父窗口
+				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				//打开
+				PopUpManager.addPopUp(pa,this,true);
+				PopUpManager.centerPopUp(pa);
+				PopUpManager.bringToFront(pa);
 			}
 			override public function  get preferEventListeners():Array
 			{
 				var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
 				var products:EventListenerModel = new EventListenerModel("product.findByPage",onProductsFindByPage);
-				var productAddSuccess:EventListenerModel = new EventListenerModel("addProduct.success",onProductAddSuccess);
+				var productAddSuccess:EventListenerModel = new EventListenerModel("addProduct.success",refreshCurrentPage);
+				var productUpdateSuccess:EventListenerModel = new EventListenerModel("updateProduct.success",refreshCurrentPage);
 				var productDeleteSuccess:EventListenerModel = new EventListenerModel("product.delete",refreshCurrentPage);
-				return [productDefine,products,productAddSuccess,productDeleteSuccess];
-			}
-			public function onProductAddSuccess(e:GeneralBundleEvent):void{
-				search();
+				return [productDefine,products,productAddSuccess,productUpdateSuccess,productDeleteSuccess];
 			}
 			public function search():void{
 				this.pageFrom = 1;
