@@ -49,6 +49,7 @@
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_DELETE_EVENT,onDelete);
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_EDIT_EVENT,onEdit);
 				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
+				searchCondition.addEventListener(KeyboardEvent.KEY_DOWN,prompt);
 				//获取商品定义 
 				var arg:Object = new Object();
 				arg[Consts.COLLECTION] = "productDefine";
@@ -62,6 +63,24 @@
 					searchCondition.textInput.text = "品类:" + productCategory;
 				}
 				search();
+			}
+			public function prompt(e:KeyboardEvent):void{
+				if(e.keyCode == 13){
+					search();
+				}
+				else{
+					var sc:String = searchCondition.textInput.text;
+					if(sc == "" || sc.indexOf(" ") >= 0){
+						return;
+					}
+					else{
+						var con:* = {"keywords":{ "$regex" : "^.*" + sc + ".*$" , "$options" : "i"}};
+						var pArg:* = {};
+						pArg[Consts.CONDITION] = JSON.encode(con);
+						this.c.dispatch(new RpcEvent("product/searchkeywords",pArg));
+					}
+				}
+				
 			}
 			public function onDelete(e:GeneralBundleEvent):void{
 				this.currentData = e.bundle;
@@ -93,8 +112,21 @@
 				var productAddSuccess:EventListenerModel = new EventListenerModel("addProduct.success",refreshCurrentPage);
 				var productUpdateSuccess:EventListenerModel = new EventListenerModel("updateProduct.success",refreshCurrentPage);
 				var productDeleteSuccess:EventListenerModel = new EventListenerModel("product.delete",refreshCurrentPage);
-				return [productDefine,products,productAddSuccess,productUpdateSuccess,productDeleteSuccess];
+				var productSearchKeyworsSuccess:EventListenerModel = new EventListenerModel("product.searchkeywords.success",onSearchKeywords);
+				return [productDefine,products,productAddSuccess,productUpdateSuccess,productDeleteSuccess,productSearchKeyworsSuccess];
 			}
+			//当获得返回的关键字时
+			public function onSearchKeywords(e:GeneralBundleEvent):void{
+				var a:ArrayCollection = new ArrayCollection(e.bundle as Array);
+				a.filterFunction = function(item:Object):Boolean{
+					var pattern:RegExp = new RegExp("^.*"+ searchCondition.textInput.text + ".*$", "i");
+					return pattern.test(item as String);
+				};
+				a.refresh();
+				searchCondition.dataProvider = a;
+				searchCondition.openDropDown();
+			}
+			
 			public function search():void{
 				this.pageFrom = 1;
 				//查询商品，每页50
@@ -106,6 +138,8 @@
 				
 				var sc:String = searchCondition.textInput.text
 				var keywords:Array = sc.split(" ");
+				//模糊查询
+				var indistinctKeywords:Array = new Array();
 				
 				for(var i:int = keywords.length -1 ; i >= 0; i--){
 					if((keywords[i] as String) == ""){
@@ -113,15 +147,17 @@
 						continue;
 					}
 					var pair:Array = (keywords[i] as String).split(":");
-					if(pair.length > 1){
-						keywords.splice(i,1);
+					if(pair.length == 1){
+						if(keywords[i] as String != ""){
+							indistinctKeywords.push({ "$regex" : "^.*" + keywords[i] + ".*$" , "$options" : "i"});
+						}
 					}
 					if(pair.length == 2){
 						condition[pair[0]] = pair[1]; 
 					}
 				}
-				if(keywords.length > 0){
-					allKeywordsCondition["$all"] = keywords;
+				if(indistinctKeywords.length > 0){
+					allKeywordsCondition["$all"] = indistinctKeywords;
 					condition["keywords"] = allKeywordsCondition;
 				}
 				pArg[Consts.CONDITION] = JSON.encode(condition);

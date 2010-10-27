@@ -20,6 +20,8 @@
     <module application="src/Main.mxml" destPath="manage/modules/resource/Resources.swf" optimize="true" sourcePath="src/manage/modules/resource/Resources.mxml"/>
     <module application="src/Main.mxml" destPath="manage/modules/resource/ResourcesMainPage.swf" optimize="true" sourcePath="src/manage/modules/resource/ResourcesMainPage.mxml"/>
     <module application="src/Main.mxml" destPath="manage/modules/product/Products.swf" optimize="true" sourcePath="src/manage/modules/product/Products.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/marketing/discount/Discounts.swf" optimize="true" sourcePath="src/manage/modules/marketing/discount/Discounts.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/marketing/Marketings.swf" optimize="true" sourcePath="src/manage/modules/marketing/Marketings.mxml"/>
   </modules>
   <buildCSSFiles/>
 </actionScriptProperties>
