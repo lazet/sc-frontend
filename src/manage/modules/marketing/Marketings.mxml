@@ -20,6 +20,7 @@
 			
 			import spark.components.DataGroup;
 			import spark.components.List;
+			import spark.events.IndexChangeEvent;
 			
 			import util.EventTypeDefine;
 			import util.ObjectNameDefine;
@@ -32,12 +33,20 @@
 				var rpcClient:RpcService = new RpcService(info.remoteSiteUrl);
 				
 				operationArea.container.put(RpcService.RPC_SERVICE, rpcClient)
-				operationArea.open("manage/modules/marketing/MarketingMainPage.swf","营销中心","manage/modules/resource/ResourcesMainPage.swf","assets/greenHomePage.jpeg",false,false);
+				operationArea.open("manage/modules/marketing/MarketingsMainPage.swf","营销中心","manage/modules/resource/MarketingsMainPage.swf","assets/greenHomePage.jpeg",false,false);
 
 			}
 			public function onMarketingCenter():void{
-				operationArea.open("manage/modules/marketing/MarketingMainPage.swf","营销中心","manage/modules/resource/ResourcesMainPage.swf","assets/greenHomePage.jpeg",false,false);
+				operationArea.open("manage/modules/marketing/MarketingsMainPage.swf","营销中心","manage/modules/resource/MarketingsMainPage.swf","assets/greenHomePage.jpeg",false,false);
 
+			}
+
+
+			protected function onSwitchCategory(e:IndexChangeEvent):void{
+				operationArea.container.put(ObjectNameDefine.CURRENT_DISCOUNT_CATEGORY,categoryId.selectedItem);	
+				
+				//打开折扣管理页面
+				operationArea.open(ObjectNameDefine.DISCOUNT_MODULE_ID,"打折促销","manage/modules/marketing/discount/Discounts.swf","assets/discount.jpg",true,true);
 			}
 
 		]]>
@@ -47,8 +56,8 @@
 		<s:VGroup width="20%" height="100%" gap="0">
 			<s:Button label="营销中心" id="marketingCenter" width="100%" height="24" fontSize="16"  chromeColor="#696969" click="onMarketingCenter()"/>
 			<mx:Accordion id="category" width="100%" height="100%">
-				<s:NavigatorContent  label="折扣" width="100%" height="100%">
-					<s:List width="100%" height="100%"  textAlign="left" fontSize="14">
+				<s:NavigatorContent  label="打折促销" width="100%" height="100%">
+					<s:List id="categoryId" width="100%" height="100%"  textAlign="left" fontSize="14" change="onSwitchCategory(event)">
 						<s:dataProvider>
 							<s:ArrayCollection>
 								<fx:Array>
@@ -61,7 +70,16 @@
 						</s:dataProvider>
 					</s:List>
 				</s:NavigatorContent>
-				<s:NavigatorContent  label="单笔消费满多少减多少" width="100%" height="100%">
+				<s:NavigatorContent  label="满额减款" width="100%" height="100%">
+					
+				</s:NavigatorContent>
+				<s:NavigatorContent  label="满额赠礼" width="100%" height="100%">
+					
+				</s:NavigatorContent>
+				<s:NavigatorContent  label="捆绑促销" width="100%" height="100%">
+					
+				</s:NavigatorContent>
+				<s:NavigatorContent  label="消费抽奖" width="100%" height="100%">
 					
 				</s:NavigatorContent>
 			</mx:Accordion>

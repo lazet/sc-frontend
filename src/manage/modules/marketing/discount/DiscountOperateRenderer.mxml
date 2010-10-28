@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  focusEnabled="true" top="0" left="0" right="0" bottom="0">
+
+	<fx:Script>
+		<![CDATA[
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import util.EventTypeDefine;
+			
+			protected function delete_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.DISCOUNT_DELETE_EVENT,this.data));
+			}
+			protected function edit_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.DISCOUNT_EDIT_EVENT,this.data));
+			}
+			protected function detail_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.DISCOUNT_DETAIL_EVENT,this.data));
+			}
+		]]>
+	</fx:Script>
+	
+	<s:HGroup gap="5" horizontalCenter="0">
+		<mx:LinkButton label="详情" click="detail_clickHandler(event)"/>
+		<mx:LinkButton label="编辑" click="edit_clickHandler(event)" visible='{this.data["状态"] == "active"}'/>
+		<mx:LinkButton label="终止" click="delete_clickHandler(event)" visible='{this.data["状态"] == "active"}'/>
+	</s:HGroup>
+</s:MXDataGridItemRenderer>

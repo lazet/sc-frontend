@@ -3,11 +3,288 @@
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx" 
 					   xmlns:c="org.lcf.*"
-					   layout="absolute" width="100%" height="100%" xmlns:util="util.*" >
+					   layout="absolute" width="100%" height="100%" xmlns:util="util.*" creationComplete="onInit(event)" >
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			import rpc.RpcService;
+			
+			import spark.components.DataGroup;
+			import spark.components.List;
+			
+			import util.Consts;
+			import util.EventTypeDefine;
+			import util.ObjectNameDefine;
+			
+			protected var defs:Array;
+			[Bindable]
+			protected var pageFrom:int = 1;
+			protected var size:int = 20;
+			[Bindable]
+			protected var total:int = 0;
+			protected var arg:* = {};
+			
+			var currentData:*;
+			
+			protected function onInit(event:FlexEvent):void{
+				//注册列表删除和编辑监听事件
+				resultsDisplay.addEventListener(EventTypeDefine.DISCOUNT_DELETE_EVENT,onDelete);
+				resultsDisplay.addEventListener(EventTypeDefine.DISCOUNT_EDIT_EVENT,onEdit);
+				resultsDisplay.addEventListener(EventTypeDefine.DISCOUNT_DETAIL_EVENT,onDetail);
+				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
+				searchCondition.addEventListener(KeyboardEvent.KEY_DOWN,prompt);
+				//获取折扣定义 
+				var arg:Object = new Object();
+				arg[Consts.COLLECTION] = "discountDefine";
+				arg[Consts.CONDITION] = "{}";
+				arg[Consts.ORDER_BY] = "{\"order\":1}";
+				this.c.dispatch(new RpcEvent("data/findAll",arg));
+				//获取折扣分类
+				var discountCategory:String = String(this.c.get(ObjectNameDefine.CURRENT_DISCOUNT_CATEGORY));
+				
+				if(!("全部" == discountCategory || discountCategory == null || discountCategory == "")){
+					searchCondition.textInput.text = "类型:" + discountCategory;
+				}
+				search();
+			}
+			public function prompt(e:KeyboardEvent):void{
+				if(e.keyCode == 13){
+					search();
+				}
+				else{
+					var sc:String = searchCondition.textInput.text;
+					if(sc == "" || sc.indexOf(" ") >= 0){
+						return;
+					}
+					else{
+						var con:* = {"keywords":{ "$regex" : "^.*" + sc + ".*$" , "$options" : "i"}};
+						var pArg:* = {};
+						pArg[Consts.CONDITION] = JSON.encode(con);
+						this.c.dispatch(new RpcEvent("discount/searchkeywords",pArg));
+					}
+				}
+				
+			}
+			public function onDelete(e:GeneralBundleEvent):void{
+				this.currentData = e.bundle;
+				Alert.show("确定终止本条折扣规则吗？","系统提示",Alert.OK | Alert.CANCEL,this,toDelete,null,Alert.CANCEL);
+			}
+			public function toDelete(e:CloseEvent):void{
+				if(e.detail == Alert.OK){
+					var pArg:Object = new Object();
+					pArg[Consts.COLLECTION] = "discount";
+					pArg[Consts.CONDITION] = JSON.encode({"_id":this.currentData["_id"]});
+					this.c.dispatch(new RpcEvent("data/delete",pArg));
+				}				
+			}
+			public function onDetail(e:GeneralBundleEvent):void{
+			
+			}
+			public function onEdit(e:GeneralBundleEvent):void{
+//				var pa:ProductUpdate = new ProductUpdate();
+//				this.c.put("product.update.data",e.bundle);
+//				this.c.put("product.update",pa);
+//				//获得应用主窗口，做为父窗口
+//				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+//				//打开
+//				PopUpManager.addPopUp(pa,this,true);
+//				PopUpManager.centerPopUp(pa);
+//				PopUpManager.bringToFront(pa);
+			}
+			override public function  get preferEventListeners():Array
+			{
+				var discountDefine:EventListenerModel = new EventListenerModel("discountDefine.findAll",onDiscountDefineFindAll);
+				var discounts:EventListenerModel = new EventListenerModel("discount.findByPage",onDiscountsFindByPage);
+				var discountAddSuccess:EventListenerModel = new EventListenerModel("addDiscount.success",refreshCurrentPage);
+				var discountUpdateSuccess:EventListenerModel = new EventListenerModel("updateDiscount.success",refreshCurrentPage);
+				var discountDeleteSuccess:EventListenerModel = new EventListenerModel("discount.delete",refreshCurrentPage);
+				var discountSearchKeyworsSuccess:EventListenerModel = new EventListenerModel("discount.searchkeywords.success",onSearchKeywords);
+				return [discountDefine,discounts,discountAddSuccess,discountUpdateSuccess,discountDeleteSuccess,discountSearchKeyworsSuccess];
+			}
+			//当获得返回的关键字时
+			public function onSearchKeywords(e:GeneralBundleEvent):void{
+				var a:ArrayCollection = new ArrayCollection(e.bundle as Array);
+				a.filterFunction = function(item:Object):Boolean{
+					var pattern:RegExp = new RegExp("^.*"+ searchCondition.textInput.text + ".*$", "i");
+					return pattern.test(item as String);
+				};
+				a.refresh();
+				searchCondition.dataProvider = a;
+				searchCondition.openDropDown();
+			}
+			
+			public function search():void{
+				this.pageFrom = 1;
+				//查询折扣，每页50
+				var pArg:Object = new Object();
+				pArg[Consts.COLLECTION] = "discount";
+				//解析查询字符串
+				var condition:Object = {};
+				var allKeywordsCondition:Object = {};
+				
+				var sc:String = searchCondition.textInput.text
+				var keywords:Array = sc.split(" ");
+				//模糊查询
+				var indistinctKeywords:Array = new Array();
+				
+				for(var i:int = keywords.length -1 ; i >= 0; i--){
+					if((keywords[i] as String) == ""){
+						keywords.splice(i,1);
+						continue;
+					}
+					var pair:Array = (keywords[i] as String).split(":");
+					if(pair.length == 1){
+						if(keywords[i] as String != ""){
+							indistinctKeywords.push({ "$regex" : "^.*" + keywords[i] + ".*$" , "$options" : "i"});
+						}
+					}
+					if(pair.length == 2){
+						condition[pair[0]] = pair[1]; 
+					}
+				}
+				if(indistinctKeywords.length > 0){
+					allKeywordsCondition["$all"] = indistinctKeywords;
+					condition["keywords"] = allKeywordsCondition;
+				}
+				pArg[Consts.CONDITION] = JSON.encode(condition);
+				pArg[Consts.PAGE_FROM] = this.pageFrom;
+				pArg[Consts.PAGE_SIZE] = this.size;
+				pArg[Consts.ORDER_BY] = "{\"创建时间\":-1}";
+				this.arg = pArg;
+				this.c.dispatch(new RpcEvent("data/findByPage",pArg));
+			}
+			/**
+			 * 展示一列，如果是数组，则转换为字符串
+			 */ 
+			protected function columnShow(item:Object,column:DataGridColumn):String{
+				if( item[column.dataField] is Array){
+					var items:Array = item[column.dataField] as Array;
+					var label:String = "";
+					for (var i:int=0;i< items.length;i++){
+						label += (items[i] + ' ');
+					}
+					return label;
+				}
+				else{
+					if(column.headerText.indexOf("(元)") > 0 && item[column.dataField] != null && item[column.dataField] != "")
+						return (Number(item[column.dataField])/100.00).toFixed(2);
+					else{
+						if(item[column.dataField] == null) return "";
+						return String(item[column.dataField])
+					};
+					
+				}
+			}
+			public function onDiscountDefineFindAll(e:GeneralBundleEvent):void{
+				defs = e.bundle as Array;
+				this.c.put(ObjectNameDefine.DISCOUNT_DEFINE,defs);
+				var columns:Array = new Array();
+				for (var i:int= 0; i< defs.length; i++){
+					if(!defs[i]["showInList"])
+						continue;
+					var column:DataGridColumn = new DataGridColumn();
+					if(defs[i]["dataType"] == "Money"){
+						column.headerText = defs[i]["itemName"] + "(元)";
+					}else{
+						column.headerText = defs[i]["itemName"];
+					}
+					column.dataField = defs[i]["itemName"];
+					column.dataTipFunction = columnShow;
+					column.labelFunction = columnShow;
+					columns.push(column);
+				}
+				var columnOper:DataGridColumn = new DataGridColumn();
+				columnOper.headerText = "操作";
+				columnOper.dataField = "操作";
+				columnOper.itemRenderer = new ClassFactory(DiscountOperateRenderer);
+				columns.push(columnOper);
+				resultsDisplay.columns = columns;
+			}
+			public function onDiscountsFindByPage(e:GeneralBundleEvent):void{
+				this.total = e.bundle[Consts.TOTAL] as int;
+				if(this.total > this.pageFrom * this.size){
+					nextP.enabled = true;
+					nextP.setStyle("textDecoration","underline");
+				}
+				else{
+					nextP.enabled = false;
+					nextP.setStyle("textDecoration","none");
+				}
+				if(this.pageFrom > 1){
+					lastP.enabled = true;
+					lastP.setStyle("textDecoration","underline");
+				}
+				else{
+					lastP.enabled = false;
+					lastP.setStyle("textDecoration","none");
+				}
+				var defs:Array = e.bundle[Consts.DATASET] as Array;
+				var defCollection:ArrayCollection = new ArrayCollection(defs);
+				resultsDisplay.dataProvider = defCollection;
+			}
+			public function add():void{
+//				var pa:ProductAdd = new ProductAdd();
+//				this.c.put("product.add",pa);
+//				//获得应用主窗口，做为父窗口
+//				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+//				//打开
+//				PopUpManager.addPopUp(pa,this,true);
+//				PopUpManager.centerPopUp(pa);
+//				PopUpManager.bringToFront(pa);
+			}
+			public function refreshCurrentPage(e:GeneralBundleEvent):void{
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function lastPage():void{
+				if(this.pageFrom <= 1) return;
+				this.pageFrom --;
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function nextPage():void{
+				if(this.total <= this.pageFrom * this.size) return;
+				this.pageFrom ++;
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+		]]>
+	</fx:Script>
 	<s:VGroup  width="100%" height="100%" >
+		<s:HGroup verticalAlign="middle" width="720" gap="10">
+			<s:Label paddingLeft="120" text=""/> 
+			<s:ComboBox id="searchCondition" width="300" fontSize="16" />
+			<s:Button label="搜索" click="search()"/>
+			<s:Button label="搜索全部" click="search()"/>
+			<mx:Spacer width="100%"/>
+			<s:Button label="添加折扣" click="add()" right="0"/>
+		</s:HGroup>
 		
+		<mx:DataGrid id="resultsDisplay" width="100%" height="100%" textAlign="center"/>
+		<s:HGroup  width="600" verticalAlign="top">
+			<s:Label text="共计\{{total}\}种折扣" paddingLeft="125"/>
+			<mx:Spacer width="100%"/>
+			<s:Label text="共{Math.ceil(total*1.0/size)}页 " paddingLeft="125"/>
+			<s:Label id = "lastP" text="上一页" toolTip="上一页" click="lastPage()" enabled="false"/>
+			<s:Label id="currentPageBottom" text="{pageFrom}"/>
+			<s:Label id = "nextP" text="下一页" toolTip="下一页" textDecoration="underline"  click="nextPage()" enabled="false"/>	
+		</s:HGroup>
 	</s:VGroup>
 </c:AbstractInnerModule>

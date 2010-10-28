@@ -7,5 +7,9 @@ package util
 		
 		static public var PRODUCT_DELETE_EVENT:String = "PRODUCT_DELETE_EVENT";
 		static public var PRODUCT_EDIT_EVENT:String = "PRODUCT_EDIT_EVENT";
+		
+		static public var DISCOUNT_DELETE_EVENT:String = "DISCOUNT_DELETE_EVENT";
+		static public var DISCOUNT_EDIT_EVENT:String = "DISCOUNT_EDIT_EVENT";
+		static public var DISCOUNT_DETAIL_EVENT:String = "DISCOUNT_DETAIL_EVENT";
 	}
 }
