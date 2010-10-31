@@ -41,11 +41,14 @@
 			protected var total:int = 0;
 			protected var arg:* = {};
 			
+			protected var searchAll:Boolean = false;
+			
 			var currentData:*;
+			protected var today:String;
 			
 			protected function onInit(event:FlexEvent):void{
 				//注册列表删除和编辑监听事件
-				resultsDisplay.addEventListener(EventTypeDefine.DISCOUNT_DELETE_EVENT,onDelete);
+				resultsDisplay.addEventListener(EventTypeDefine.DISCOUNT_STOP_EVENT,onStop);
 				resultsDisplay.addEventListener(EventTypeDefine.DISCOUNT_EDIT_EVENT,onEdit);
 				resultsDisplay.addEventListener(EventTypeDefine.DISCOUNT_DETAIL_EVENT,onDetail);
 				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
@@ -62,6 +65,7 @@
 				if(!("全部" == discountCategory || discountCategory == null || discountCategory == "")){
 					searchCondition.textInput.text = "类型:" + discountCategory;
 				}
+				this.today = this.c.get(ObjectNameDefine.TODAY) as String;
 				search();
 			}
 			public function prompt(e:KeyboardEvent):void{
@@ -82,31 +86,40 @@
 				}
 				
 			}
-			public function onDelete(e:GeneralBundleEvent):void{
+			public function onStop(e:GeneralBundleEvent):void{
 				this.currentData = e.bundle;
-				Alert.show("确定终止本条折扣规则吗？","系统提示",Alert.OK | Alert.CANCEL,this,toDelete,null,Alert.CANCEL);
+				Alert.show("确定终止本条折扣规则吗？","系统提示",Alert.OK | Alert.CANCEL,this,toStop,null,Alert.CANCEL);
 			}
-			public function toDelete(e:CloseEvent):void{
+			public function toStop(e:CloseEvent):void{
 				if(e.detail == Alert.OK){
 					var pArg:Object = new Object();
 					pArg[Consts.COLLECTION] = "discount";
 					pArg[Consts.CONDITION] = JSON.encode({"_id":this.currentData["_id"]});
-					this.c.dispatch(new RpcEvent("data/delete",pArg));
+					pArg[Consts.OBJ] = JSON.encode({"$set":{"状态":"inactive"}});
+					this.c.dispatch(new RpcEvent("data/update",pArg));
 				}				
 			}
 			public function onDetail(e:GeneralBundleEvent):void{
-			
+				var pa:DiscountDetail = new DiscountDetail();
+				this.c.put("discount.detail.data",e.bundle);
+				this.c.put("discount.detail",pa);
+				//获得应用主窗口，做为父窗口
+				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				//打开
+				PopUpManager.addPopUp(pa,this,true);
+				PopUpManager.centerPopUp(pa);
+				PopUpManager.bringToFront(pa);
 			}
 			public function onEdit(e:GeneralBundleEvent):void{
-//				var pa:ProductUpdate = new ProductUpdate();
-//				this.c.put("product.update.data",e.bundle);
-//				this.c.put("product.update",pa);
-//				//获得应用主窗口，做为父窗口
-//				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
-//				//打开
-//				PopUpManager.addPopUp(pa,this,true);
-//				PopUpManager.centerPopUp(pa);
-//				PopUpManager.bringToFront(pa);
+				var pa:DiscountUpdate = new DiscountUpdate();
+				this.c.put("discount.update.data",e.bundle);
+				this.c.put("discount.update",pa);
+				//获得应用主窗口，做为父窗口
+				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				//打开
+				PopUpManager.addPopUp(pa,this,true);
+				PopUpManager.centerPopUp(pa);
+				PopUpManager.bringToFront(pa);
 			}
 			override public function  get preferEventListeners():Array
 			{
@@ -114,9 +127,9 @@
 				var discounts:EventListenerModel = new EventListenerModel("discount.findByPage",onDiscountsFindByPage);
 				var discountAddSuccess:EventListenerModel = new EventListenerModel("addDiscount.success",refreshCurrentPage);
 				var discountUpdateSuccess:EventListenerModel = new EventListenerModel("updateDiscount.success",refreshCurrentPage);
-				var discountDeleteSuccess:EventListenerModel = new EventListenerModel("discount.delete",refreshCurrentPage);
+				var discountStopSuccess:EventListenerModel = new EventListenerModel("discount.update",refreshCurrentPage);
 				var discountSearchKeyworsSuccess:EventListenerModel = new EventListenerModel("discount.searchkeywords.success",onSearchKeywords);
-				return [discountDefine,discounts,discountAddSuccess,discountUpdateSuccess,discountDeleteSuccess,discountSearchKeyworsSuccess];
+				return [discountDefine,discounts,discountAddSuccess,discountUpdateSuccess,discountStopSuccess,discountSearchKeyworsSuccess];
 			}
 			//当获得返回的关键字时
 			public function onSearchKeywords(e:GeneralBundleEvent):void{
@@ -141,6 +154,10 @@
 				
 				var sc:String = searchCondition.textInput.text
 				var keywords:Array = sc.split(" ");
+				if(!this.searchAll){
+					condition["状态"] = "active";
+					condition["结束日期"] = {"$gte":today};
+				}
 				//模糊查询
 				var indistinctKeywords:Array = new Array();
 				
@@ -192,6 +209,15 @@
 					
 				}
 			}
+			protected function columnTipShow(item:Object,column:DataGridColumn):String{
+				if(item["状态"] == "active" && item["结束日期"] < this.today){
+					return "此规则已逾期失效";
+				}
+				if(item["状态"] != "active"){
+					return "此规则已被终止";
+				}
+				return "此规则正在使用中";
+			}
 			public function onDiscountDefineFindAll(e:GeneralBundleEvent):void{
 				defs = e.bundle as Array;
 				this.c.put(ObjectNameDefine.DISCOUNT_DEFINE,defs);
@@ -202,11 +228,13 @@
 					var column:DataGridColumn = new DataGridColumn();
 					if(defs[i]["dataType"] == "Money"){
 						column.headerText = defs[i]["itemName"] + "(元)";
+					}else if(defs[i]["dataType"] == "Percent"){
+						column.headerText = defs[i]["itemName"] + "(%)";
 					}else{
 						column.headerText = defs[i]["itemName"];
 					}
 					column.dataField = defs[i]["itemName"];
-					column.dataTipFunction = columnShow;
+					column.dataTipFunction = columnTipShow;
 					column.labelFunction = columnShow;
 					columns.push(column);
 				}
@@ -240,14 +268,14 @@
 				resultsDisplay.dataProvider = defCollection;
 			}
 			public function add():void{
-//				var pa:ProductAdd = new ProductAdd();
-//				this.c.put("product.add",pa);
-//				//获得应用主窗口，做为父窗口
-//				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
-//				//打开
-//				PopUpManager.addPopUp(pa,this,true);
-//				PopUpManager.centerPopUp(pa);
-//				PopUpManager.bringToFront(pa);
+				var pa:DiscountAdd = new DiscountAdd();
+				this.c.put("discount.add",pa);
+				//获得应用主窗口，做为父窗口
+				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				//打开
+				PopUpManager.addPopUp(pa,this,true);
+				PopUpManager.centerPopUp(pa);
+				PopUpManager.bringToFront(pa);
 			}
 			public function refreshCurrentPage(e:GeneralBundleEvent):void{
 				this.arg[Consts.PAGE_FROM] = this.pageFrom;
@@ -271,13 +299,13 @@
 		<s:HGroup verticalAlign="middle" width="720" gap="10">
 			<s:Label paddingLeft="120" text=""/> 
 			<s:ComboBox id="searchCondition" width="300" fontSize="16" />
-			<s:Button label="搜索" click="search()"/>
-			<s:Button label="搜索全部" click="search()"/>
+			<s:Button label="搜索" click="this.searchAll = false;search()"/>
+			<s:Button label="搜索全部" click="this.searchAll = true;search();"/>
 			<mx:Spacer width="100%"/>
 			<s:Button label="添加折扣" click="add()" right="0"/>
 		</s:HGroup>
 		
-		<mx:DataGrid id="resultsDisplay" width="100%" height="100%" textAlign="center"/>
+		<mx:DataGrid id="resultsDisplay" width="100%" height="100%" textAlign="center" />
 		<s:HGroup  width="600" verticalAlign="top">
 			<s:Label text="共计\{{total}\}种折扣" paddingLeft="125"/>
 			<mx:Spacer width="100%"/>

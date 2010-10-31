@@ -16,5 +16,6 @@ package util
 		static public var CURRENT_DISCOUNT_CATEGORY:String = "CURRENT_DISCOUNT_CATEGORY";
 		static public var DISCOUNT_DEFINE:String = "DISCOUNT_DEFINE";
 		
+		static public var TODAY:String = "today";
 	}
 }

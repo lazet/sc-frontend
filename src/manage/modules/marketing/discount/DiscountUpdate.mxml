@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" title="修改折扣规则"  creationComplete="init(event)" 
+		 implements="org.lcf.IEventPrefer" close="cancel()" xmlns:util="util.*" xmlns:product="manage.modules.product.*">
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import flash.system.IME;
+			
+			import json.JParser;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.FormItem;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.CurrencyValidator;
+			import mx.validators.CurrencyValidatorAlignSymbol;
+			import mx.validators.NumberValidator;
+			import mx.validators.NumberValidatorDomainType;
+			import mx.validators.RegExpValidator;
+			import mx.validators.StringValidator;
+			import mx.validators.Validator;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.IContainer;
+			import org.lcf.IEventPrefer;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			
+			import sign.SignInfo;
+			
+			import spark.components.ComboBox;
+			import spark.components.DropDownList;
+			import spark.components.TextInput;
+			import spark.events.IndexChangeEvent;
+			
+			import util.Consts;
+			import util.ObjectNameDefine;
+			import util.ProductCagegoryValidate;
+			import util.SelectOneValidate;
+			
+			//状态：初始:initial,提交中saving
+			protected var status:String = "initial";
+			
+			//容器
+			[Inject(name="container")]
+			public var c:IContainer;
+			
+			private var today:String;
+			private var currentTime:String;
+			private var currentUserInfo:SignInfo;
+			
+			protected var data:*;
+			
+			public function init(e:FlexEvent):void{
+				pc.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
+				product.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
+				
+				product.textInput.removeEventListener(FocusEvent.FOCUS_OUT,calcDiscount);
+				product.textInput.addEventListener(FocusEvent.FOCUS_OUT,calcDiscount);
+				
+				this.c.dispatch(new RpcEvent("data/now",{}));
+				
+				data = c.get("discount.update.data");
+				//填写数据
+				if(data["类型"] == "商品特价"){
+					product.textInput.text = data["商品"];
+					price.text = data["特价"];
+					typeId.selectedIndex = 0;
+					this.setCurrentState("specPrice",false);
+					calcDiscount();
+				}
+				else if(data["类型"] == "品类打折"){
+					pc.textInput.text = data["品类"];
+					typeId.selectedIndex = 1;
+					this.setCurrentState("categoryDiscount",false);
+				}
+				else{
+					typeId.selectedIndex = 2;
+					this.setCurrentState("fullDiscount",false);
+				}
+				discount.text = data["折扣"];
+				begin.text = data["起始日期"];
+				end.text = data["结束日期"];
+				period.text = data["促销时段"];
+				
+				this.currentUserInfo = c.get(SignInfo.SIGN_INFO) as SignInfo;
+			}
+			
+			protected function save():Boolean{
+				//禁止重复提交
+				if(status == "saving"){
+					Alert.show("正在保存中，请不要重复提交","保存提示");
+					return false;
+				}
+				//验证
+				//验证
+				var results:Array = Validator.validateAll([ev,tv]);
+				if(results.length > 0){
+					return false;
+				}
+				
+				status = "saving";
+				//收集参数				
+				var pArg:Object = new Object();
+				pArg[Consts.COLLECTION] = "discount";
+				pArg[Consts.CONDITION] = JSON.encode({"_id":this.data["_id"]});
+				pArg[Consts.OBJ] = JSON.encode({"$set":{"结束日期":end.text,"促销时段":period.text,"修改时间":this.currentTime,"修改人":this.currentUserInfo.loginName}});
+				this.c.dispatch(new RpcEvent("data/update",pArg));
+	
+				return true;
+				
+			}
+			public function cancel():void{
+				var isModify:Boolean = false;
+				if(end.text != data["结束日期"] || period.text != data["促销时段"]){
+					isModify = true;
+				}
+				if(isModify){
+					Alert.show("信息未保存，确定要关闭吗？","系统提示",Alert.OK | Alert.CANCEL,this,onExit);
+					return;
+				}
+				this.c.remove("discount.update");	
+				PopUpManager.removePopUp(this);
+			}
+			protected function onExit(e:CloseEvent):void{
+				if(e.detail == Alert.OK){
+					this.c.remove("discount.update");	
+					PopUpManager.removePopUp(this);
+				}
+			}
+			public function onProductCategoryFindAll(e:GeneralBundleEvent):void{
+				pc.dataProvider = new ArrayCollection(e.bundle as Array);
+			}
+			public function  get preferEventListeners():Array
+			{
+				var discountUpdateSuccess:EventListenerModel = new EventListenerModel("discount.update",onDiscountUpdateSuccess);
+				var calcDiscountSuccess:EventListenerModel = new EventListenerModel("product.get",onCalcDiscount);
+				var getNow:EventListenerModel = new EventListenerModel("now",onGetNow);
+				return [discountUpdateSuccess,calcDiscountSuccess,getNow];
+			}
+			public function onGetNow(e:GeneralBundleEvent):void{
+				var now:String = String(e.bundle);
+				this.today = now.substr(0,now.indexOf(" "));
+				this.currentTime = now;
+			}
+			public function onDiscountUpdateSuccess(e:GeneralBundleEvent):void{
+				this.c.remove("discount.update");	
+				PopUpManager.removePopUp(this);
+			}
+
+			public function onChangeType(e:IndexChangeEvent):void{
+				if(e.newIndex == 0){
+					this.setCurrentState("specPrice",false);
+				}else if(e.newIndex == 1){
+					this.setCurrentState("categoryDiscount",false);
+				}else if(e.newIndex == 2){
+					this.setCurrentState("fullDiscount",false);
+				}
+				
+			}
+
+
+
+			
+			public function calcDiscount(e:Event=null):void{
+				if(product.textInput.text == ""){
+					return;
+				}
+				var pArg:* = {};
+				pArg["collection"] = "product";
+				pArg["condition"] = JSON.encode({"商品名称":product.textInput.text});
+				this.c.dispatch(new RpcEvent("data/get",pArg));
+			}
+			
+			public function onCalcDiscount(e:GeneralBundleEvent):void{
+				var p:* = e.bundle;
+
+				if(p == null || p == "null"){
+					cp.text = "";
+					discount.text = "";
+					return;
+				}
+				var currentPrice:Number = Number(p["当前价格"]);
+				if(isNaN(currentPrice))
+					return;
+				
+				cp.text = (currentPrice / 100).toFixed(2);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:ArrayCollection id="discountType">
+			<fx:Array>
+				<fx:String>商品特价</fx:String>
+				<fx:String>品类打折</fx:String>
+				<fx:String>全场打折</fx:String>
+			</fx:Array>
+		</s:ArrayCollection>
+		<util:ComboBoxValidate id="pcv" regError="品类填写不正确" reg="^[\u4e00-\u9fa5\w]*$" source="{pc}" property="id"/>
+		<util:ComboBoxValidate id="pv" regError="商品填写不正确" reg="^[\u4e00-\u9fa5\w]*$" source="{product}" property="id"/>
+		<mx:CurrencyValidator id="mv" alignSymbol="right" allowNegative="false" minValue="0.01" maxValue="100000000" 
+							  required="true" precision="2"
+							  source="{price}" property="text"/>
+		<mx:NumberValidator id="dv" required="true" required.specPrice="false" minValue="1" maxValue="100" precision="0"
+							 source="{discount}" property="text"/>
+		<util:DateValidate id="bv" required="true" source="{begin}" property="text"/>
+		
+		<util:DateValidate id="ev" required="true" source="{end}" property="text"/>
+		
+		<util:PeriodValidate id="tv" source="{period}" property="text" required="false" periodError="时段填写不正确"/>
+		
+	</fx:Declarations>
+	<s:states>
+		<s:State name="specPrice"/>
+		<s:State name="categoryDiscount"/>
+		<s:State name="fullDiscount"/>
+	</s:states>
+	<s:VGroup>
+		<s:ButtonBar id="typeId"  dataProvider="{discountType}"  requireSelection="true" change="onChangeType(event)" enabled="false"/>
+		
+		<mx:Form id="form">
+			<mx:FormItem label="品类" required="false" required.categoryDiscount="true" includeInLayout="false" includeInLayout.categoryDiscount="true" visible="false" visible.categoryDiscount="true">
+				<s:ComboBox id="pc" enabled="false" mouseEnabled="false" contentBackgroundColor="#696969"/>
+			</mx:FormItem>
+			<mx:FormItem label="商品" required="false" required.specPrice="true"  includeInLayout="false" includeInLayout.specPrice="true" visible="false" visible.specPrice="true">
+				<s:ComboBox id="product" enabled="false" mouseEnabled="false" contentBackgroundColor="#696969"/>
+			</mx:FormItem>
+			<mx:FormItem label="当前价格(元)" required="false" required.specPrice="true"  includeInLayout="false" includeInLayout.specPrice="true" visible="false" visible.specPrice="true">
+				<s:TextInput id="cp" textAlign="right" enabled="false" mouseEnabled="false" contentBackgroundColor="#696969" />
+			</mx:FormItem>
+			<mx:FormItem label="特价(元)" required="false" required.specPrice="true" includeInLayout="false" includeInLayout.specPrice="true"  visible="false" visible.specPrice="true">
+				<s:TextInput id="price" textAlign="right" focusOut="calcDiscount()" enabled="false" mouseEnabled="false" contentBackgroundColor="#696969"/>
+			</mx:FormItem>
+			<mx:FormItem label="折扣" required="true" required.specPrice="false" >
+				<s:HGroup verticalAlign="middle" gap="0">
+					<s:TextInput id="discount" editable="true" editable.specPrice="false"  textAlign="end" textAlign.specPrice="right"
+								 enabled="false" mouseEnabled="false" contentBackgroundColor="#696969"
+								 focusEnabled="true" focusEnabled.specPrice="false" />
+					<s:Label text="%"/>
+				</s:HGroup>
+			</mx:FormItem>
+			<mx:FormItem label="起始日期" required="true">
+				<mx:DateField id="begin" formatString="YYYY-MM-DD" enabled="false" mouseEnabled="false" contentBackgroundColor="#696969"/>	
+			</mx:FormItem>
+			<mx:FormItem label="结束日期" required="true">
+				<mx:DateField id="end" formatString="YYYY-MM-DD"/>	
+			</mx:FormItem>
+			<mx:FormItem label="时段（几点到几点）">
+				<mx:TextInput id="period" toolTip="格式如（6-9,11-14),不填等同（0-24），多个时段以,隔开"/>
+			</mx:FormItem>
+		</mx:Form>
+	</s:VGroup>
+	<s:controlBarContent>
+		<s:Button label="保存" click="save()"/>
+		<s:Button label="取消" click="cancel()"/>
+	</s:controlBarContent>
+	<s:controlBarLayout>
+		<s:HorizontalLayout horizontalAlign="center" paddingLeft="10" paddingRight="10" paddingTop="7" paddingBottom="7" gap="20" />
+	</s:controlBarLayout>
+
+</s:TitleWindow>

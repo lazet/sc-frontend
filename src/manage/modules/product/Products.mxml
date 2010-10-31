@@ -49,7 +49,7 @@
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_DELETE_EVENT,onDelete);
 				productsDisplay.addEventListener(EventTypeDefine.PRODUCT_EDIT_EVENT,onEdit);
 				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
-				searchCondition.addEventListener(KeyboardEvent.KEY_DOWN,prompt);
+				searchCondition.textInput.addEventListener(KeyboardEvent.KEY_DOWN,prompt);
 				//获取商品定义 
 				var arg:Object = new Object();
 				arg[Consts.COLLECTION] = "productDefine";

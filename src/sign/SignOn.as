@@ -70,14 +70,20 @@ package sign
 		{
 			var signOnSuccess:EventListenerModel = new EventListenerModel(SIGN_ON_SUCCESS_EVENT,onSignOnSuccess);
 			var signOnFailed:EventListenerModel = new EventListenerModel(SIGN_ON_FAILED_EVENT,onSignOnFailed);
-			
-			return [signOnSuccess,signOnFailed ];
+			var getNow:EventListenerModel = new EventListenerModel("now",onGetNow);
+			return [signOnSuccess,signOnFailed,getNow ];
+		}
+		public function onGetNow(e:GeneralBundleEvent):void{
+			var now:String = String(e.bundle);
+			var today:String = now.substr(0,now.indexOf(" "));
+			this.c.put(ObjectNameDefine.TODAY,today);
 		}
 		public function onSignOnSuccess(e:GeneralBundleEvent):void{
 			//填写公共信息
 			this.c.put(SignInfo.SIGN_INFO,new SignInfo(this.signOnInfo.unitName,this.signOnInfo.loginName,this.signOnInfo.password ));
 			//清理登录信息
 			password.text = '';
+			this.c.dispatch(new RpcEvent("data/now",{}));
 			//切换到管理页面
 			this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.MANAGE_VIEW,"管理主界面",new ManagerView()));
 			

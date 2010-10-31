@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" title="折扣规则详情"  creationComplete="init(event)" 
+		 implements="org.lcf.IEventPrefer" close="cancel()" xmlns:util="util.*" xmlns:product="manage.modules.product.*">
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import flash.system.IME;
+			
+			import json.JParser;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.FormItem;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.CurrencyValidator;
+			import mx.validators.CurrencyValidatorAlignSymbol;
+			import mx.validators.NumberValidator;
+			import mx.validators.NumberValidatorDomainType;
+			import mx.validators.RegExpValidator;
+			import mx.validators.StringValidator;
+			import mx.validators.Validator;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.IContainer;
+			import org.lcf.IEventPrefer;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			
+			import sign.SignInfo;
+			
+			import spark.components.ComboBox;
+			import spark.components.DropDownList;
+			import spark.components.TextInput;
+			import spark.events.IndexChangeEvent;
+			
+			import util.Consts;
+			import util.ObjectNameDefine;
+			import util.ProductCagegoryValidate;
+			import util.SelectOneValidate;
+			
+			//状态：初始:initial,提交中saving
+			protected var status:String = "initial";
+			
+			//容器
+			[Inject(name="container")]
+			public var c:IContainer;
+			
+			private var today:String;
+			private var currentTime:String;
+			private var currentUserInfo:SignInfo;
+			
+			protected var data:*;
+			
+			public function init(e:FlexEvent):void{
+				
+				this.c.dispatch(new RpcEvent("data/now",{}));
+				
+				data = c.get("discount.detail.data");
+				//填写数据
+				if(data["类型"] == "商品特价"){
+					product.text = data["商品"];
+					price.text = data["特价"];
+					typeId.text = "商品特价";
+					this.setCurrentState("specPrice",false);
+					calcDiscount();
+				}
+				else if(data["类型"] == "品类打折"){
+					pc.text = data["品类"];
+					typeId.text = "品类打折";
+					this.setCurrentState("categoryDiscount",false);
+				}
+				else{
+					typeId.text = "全场打折";
+					this.setCurrentState("fullDiscount",false);
+				}
+				discount.text = data["折扣"];
+				begin.text = data["起始日期"];
+				end.text = data["结束日期"];
+				period.text = data["促销时段"];
+				creator.text = data["创建人"];
+				createTime.text = data["创建时间"];
+				this.currentUserInfo = c.get(SignInfo.SIGN_INFO) as SignInfo;
+			}
+
+			public function cancel():void{
+				this.c.remove("discount.detail");
+				PopUpManager.removePopUp(this);
+			}
+			public function  get preferEventListeners():Array
+			{
+				var calcDiscountSuccess:EventListenerModel = new EventListenerModel("product.get",onCalcDiscount);
+				return [calcDiscountSuccess];
+			}
+			public function calcDiscount(e:Event=null):void{
+				if(product.text == ""){
+					return;
+				}
+				var pArg:* = {};
+				pArg["collection"] = "product";
+				pArg["condition"] = JSON.encode({"商品名称":product.text});
+				this.c.dispatch(new RpcEvent("data/get",pArg));
+			}
+			public function onCalcDiscount(e:GeneralBundleEvent):void{
+				var p:* = e.bundle;
+				
+				if(p == null || p == "null"){
+					cp.text = "";
+					discount.text = "";
+					return;
+				}
+				var currentPrice:Number = Number(p["当前价格"]);
+				if(isNaN(currentPrice))
+					return;
+				
+				cp.text = (currentPrice / 100).toFixed(2);
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="specPrice"/>
+		<s:State name="categoryDiscount"/>
+		<s:State name="fullDiscount"/>
+	</s:states>
+	<s:VGroup>
+		<mx:Form id="form">
+			<mx:FormItem label="折扣类型">
+				<s:Label id="typeId" />
+			</mx:FormItem>
+			<mx:FormItem label="品类" includeInLayout="false" includeInLayout.categoryDiscount="true" visible="false" visible.categoryDiscount="true">
+				<s:Label id="pc"/>
+			</mx:FormItem>
+			<mx:FormItem label="商品" includeInLayout="false" includeInLayout.specPrice="true" visible="false" visible.specPrice="true">
+				<s:Label id="product" />
+			</mx:FormItem>
+			<mx:FormItem label="当前价格(元)" includeInLayout="false" includeInLayout.specPrice="true" visible="false" visible.specPrice="true">
+				<s:Label id="cp" textAlign="right" />
+			</mx:FormItem>
+			<mx:FormItem label="特价(元)" includeInLayout="false" includeInLayout.specPrice="true"  visible="false" visible.specPrice="true">
+				<s:Label id="price" textAlign="right"/>
+			</mx:FormItem>
+			<mx:FormItem label="折扣">
+				<s:HGroup verticalAlign="middle" gap="0">
+					<s:Label id="discount"  textAlign="right"/>
+					<s:Label text="%"/>
+				</s:HGroup>
+			</mx:FormItem>
+			<mx:FormItem label="起始日期">
+				<s:Label id="begin"/>	
+			</mx:FormItem>
+			<mx:FormItem label="结束日期">
+				<s:Label id="end"/>	
+			</mx:FormItem>
+			<mx:FormItem label="时段（几点到几点）">
+				<s:Label id="period"/>
+			</mx:FormItem>
+			<mx:FormItem label="创建人">
+				<s:Label id="creator"/>
+			</mx:FormItem>
+			<mx:FormItem label="创建时间">
+				<s:Label id="createTime"/>
+			</mx:FormItem>
+		</mx:Form>
+	</s:VGroup>
+
+</s:TitleWindow>

@@ -10,9 +10,21 @@
 			
 			import util.EventTypeDefine;
 			
+			override public function set data(d:Object):void{
+				super.data = d;
+				if(this.data["状态"] != "active"){
+					detail.toolTip = "已终止";
+					detail.setStyle("color",0xff0000);
+				}
+				else{
+					detail.toolTip = "未终止";
+				}
+				
+			}
+			
 			protected function delete_clickHandler(event:MouseEvent):void
 			{
-				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.DISCOUNT_DELETE_EVENT,this.data));
+				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.DISCOUNT_STOP_EVENT,this.data));
 			}
 			protected function edit_clickHandler(event:MouseEvent):void
 			{
@@ -26,7 +38,7 @@
 	</fx:Script>
 	
 	<s:HGroup gap="5" horizontalCenter="0">
-		<mx:LinkButton label="详情" click="detail_clickHandler(event)"/>
+		<mx:LinkButton id="detail" label="详情" click="detail_clickHandler(event)"/>
 		<mx:LinkButton label="编辑" click="edit_clickHandler(event)" visible='{this.data["状态"] == "active"}'/>
 		<mx:LinkButton label="终止" click="delete_clickHandler(event)" visible='{this.data["状态"] == "active"}'/>
 	</s:HGroup>
