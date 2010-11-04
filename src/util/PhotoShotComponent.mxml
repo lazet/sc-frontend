@@ -2,17 +2,19 @@
 <s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
 			   xmlns:s="library://ns.adobe.com/flex/spark" 
 			   xmlns:mx="library://ns.adobe.com/flex/mx"
-			   title="拍摄照片" creationComplete="beginSnapShot()"
+			   title="拍摄照片中" creationComplete="beginSnapShot()"
 			   close="cancel()"
+			   resize="titlewindow1_resizeHandler(event)"
 			   controlBarVisible="true">
 	<s:layout>
 		<s:VerticalLayout gap="1"/>
 	</s:layout>
 	<fx:Script>
 		<![CDATA[
-			import mx.events.CloseEvent;
-			import mx.managers.PopUpManager;
 			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpManager;
 			
 			
 			private static const DEFAULT_CAMERA_WIDTH:Number = 500; //摄像头显示宽度
@@ -41,7 +43,7 @@
 				}
 				else
 				{
-					Alert.show("没有找到摄像头，是否重新检测?","提示：",Alert.OK|Alert.NO,this,onInitCamera);
+					Alert.show("没有发现摄像头，是否重新检测?","提示：",Alert.OK|Alert.NO,this,onInitCamera);
 					return;
 				}
 			}
@@ -79,6 +81,13 @@
 				vd.removeChildAt(0);
 				PopUpManager.removePopUp(this);
 			}
+
+			protected function titlewindow1_resizeHandler(event:ResizeEvent):void
+			{
+				this.x = (this.pic.parent.width- this.width)/2;
+				this.y = (this.pic.parent.height - this.height)/2;
+			}
+
 		]]>
 	</fx:Script>
 	<s:VideoDisplay id="vd" x="0" y="0" width="500" height="500"/>
