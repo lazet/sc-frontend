@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" >
+	
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="shoting"/>
+	</s:states>
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.graphics.codec.JPEGEncoder;
+			import mx.utils.Base64Decoder;
+			import mx.utils.Base64Encoder;
+			
+			private static const DEFAULT_CAMERA_WIDTH:Number = 660; //摄像头显示宽度
+			private static const DEFAULT_CAMERA_HEIGHT:Number = 660; //摄像头显示高度
+			
+			private var m_camera:Camera; //定义一个摄像头
+			private var m_localVideo:Video; //定义一个本地视频
+			private var m_pictureBitmapData:BitmapData //定义视频截图
+			
+			protected var picB64Data:String;
+			
+			public function set dataInBase64(data:String):void{
+				
+				this.picB64Data = data;
+				if(data != null){
+					var d:Base64Decoder = new Base64Decoder();
+					d.decode(data);
+					var ba:ByteArray = d.toByteArray();
+					ba.uncompress();
+					img.source = ba;
+				}
+				else
+					img.source = null;
+				
+			}
+			public function getdataInBase64():String{
+				if(img.content != null){
+					var jpegEncoder:JPEGEncoder=new JPEGEncoder(50);
+					var bd:BitmapData = new BitmapData(330,330);
+					var m:Matrix = new Matrix(330.0/img.content.width,0,0,330.0/img.content.height,0,0);
+					bd.draw(img.content,m);
+					var jpegData:ByteArray = jpegEncoder.encode(bd);
+					jpegData.compress();
+					var base64Encoder:Base64Encoder = new Base64Encoder();
+					base64Encoder.encodeBytes(jpegData);
+					this.picB64Data = base64Encoder.toString();
+					
+				}
+				return this.picB64Data;
+			}
+			var fileReference:FileReference
+			private function upload(evt:MouseEvent):void {
+				fileReference = new FileReference();
+				fileReference.addEventListener(Event.SELECT,function(evt:Event):void{					
+					fileReference.load();
+				});
+				fileReference.addEventListener(Event.COMPLETE,function fileReference_complete(evt:Event):void{
+					
+					img.source = fileReference.data;
+				});
+				var arr:Array = [];
+				arr.push(new FileFilter("Images", ".gif;*.jpeg;*.jpg;*.png"));
+				fileReference.browse(arr);
+			}
+			var b:Boolean = true;
+			protected function beginSnapShot(evt:MouseEvent = null):void {
+				this.setCurrentState("shoting");
+				m_camera = Camera.getCamera();
+				if(m_camera != null)
+				{
+					m_camera.addEventListener(StatusEvent.STATUS,onCameraStatusHandler);
+					m_camera.setMode(DEFAULT_CAMERA_WIDTH,DEFAULT_CAMERA_HEIGHT,30);
+					m_localVideo = new Video();
+					m_localVideo.width = 120
+					m_localVideo.height = 120;
+					m_localVideo.attachCamera(m_camera);
+					vd.addChild(m_localVideo);
+					
+				}
+				else
+				{
+					Alert.show("没有找到摄像头，是否重新检测?","提示：",Alert.OK|Alert.NO,this,onInitCamera);
+					return;
+				}
+			}
+			//检测摄像头权限事件
+			protected function onCameraStatusHandler(event:StatusEvent):void
+			{
+				if(!m_camera.muted)
+				{
+					shotButton.enabled = true;
+				}
+				m_camera.removeEventListener(StatusEvent.STATUS,onCameraStatusHandler);
+			}
+			
+			//当摄像头不存在，或连接不正常时重新获取
+			protected function onInitCamera(event:CloseEvent):void
+			{
+				if(event.detail == Alert.OK)
+				{
+					beginSnapShot();
+				}
+			}
+			protected function shot():void{
+				var bd:BitmapData = new BitmapData(120,120);
+				bd.draw(vd,new Matrix());
+				var b:Bitmap = new Bitmap(bd);
+				this.img.source = b;
+				this.setCurrentState("normal");
+				vd.removeChildAt(0);
+			}
+			protected function cancel():void{
+				this.setCurrentState("normal");
+				vd.removeChildAt(0);
+			}
+		]]>
+	</fx:Script>
+	<s:Group >
+		<s:VideoDisplay id="vd" width="120" height="120" x="0" y="0" visible="false" visible.shoting="true"/>
+		<mx:Image id="img" smoothBitmapContent="true"  x="0" y="0" width="120" height="120" visible="true" visible.shoting="false"/>
+	</s:Group>
+	<s:Group width="120" height="20">
+		<s:Button id="uploadButton" label="上传" width="39" height="20" fontSize="9" left="7" click="upload(event)" visible="true" visible.shoting="false"/>
+		<s:Button id="beginShot" label="开始拍照" width="59" height="20" fontSize="9" right="7" click="beginSnapShot(event)" visible="true" visible.shoting="false"/>
+		<s:Button id="shotButton" label="拍照" width="39" height="20" fontSize="9" left="7" visible="false" visible.shoting="true" click="shot()"/>
+		<s:Button id="cancelButton" label="取消" width="39" height="20" fontSize="9" right="7" visible="false" visible.shoting="true" click="cancel()"/>
+	</s:Group>
+</s:BorderContainer>
