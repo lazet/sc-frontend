@@ -6,24 +6,16 @@
 	<s:layout>
 		<s:VerticalLayout gap="0"/>
 	</s:layout>
-	<s:states>
-		<s:State name="normal"/>
-		<s:State name="shoting"/>
-	</s:states>
 	<fx:Script>
 		<![CDATA[
-			import mx.controls.Alert;
-			import mx.events.CloseEvent;
+			
 			import mx.graphics.codec.JPEGEncoder;
+			import mx.managers.PopUpManager;
 			import mx.utils.Base64Decoder;
 			import mx.utils.Base64Encoder;
 			
-			private static const DEFAULT_CAMERA_WIDTH:Number = 660; //摄像头显示宽度
-			private static const DEFAULT_CAMERA_HEIGHT:Number = 660; //摄像头显示高度
 			
-			private var m_camera:Camera; //定义一个摄像头
-			private var m_localVideo:Video; //定义一个本地视频
-			private var m_pictureBitmapData:BitmapData //定义视频截图
+
 			
 			protected var picB64Data:String;
 			
@@ -57,7 +49,7 @@
 				return this.picB64Data;
 			}
 			var fileReference:FileReference
-			private function upload(evt:MouseEvent):void {
+			protected function upload(evt:MouseEvent):void {
 				fileReference = new FileReference();
 				fileReference.addEventListener(Event.SELECT,function(evt:Event):void{					
 					fileReference.load();
@@ -70,67 +62,20 @@
 				arr.push(new FileFilter("Images", ".gif;*.jpeg;*.jpg;*.png"));
 				fileReference.browse(arr);
 			}
-			var b:Boolean = true;
-			protected function beginSnapShot(evt:MouseEvent = null):void {
-				this.setCurrentState("shoting");
-				m_camera = Camera.getCamera();
-				if(m_camera != null)
-				{
-					m_camera.addEventListener(StatusEvent.STATUS,onCameraStatusHandler);
-					m_camera.setMode(DEFAULT_CAMERA_WIDTH,DEFAULT_CAMERA_HEIGHT,30);
-					m_localVideo = new Video();
-					m_localVideo.width = 120
-					m_localVideo.height = 120;
-					m_localVideo.attachCamera(m_camera);
-					vd.addChild(m_localVideo);
-					
-				}
-				else
-				{
-					Alert.show("没有找到摄像头，是否重新检测?","提示：",Alert.OK|Alert.NO,this,onInitCamera);
-					return;
-				}
-			}
-			//检测摄像头权限事件
-			protected function onCameraStatusHandler(event:StatusEvent):void
-			{
-				if(!m_camera.muted)
-				{
-					shotButton.enabled = true;
-				}
-				m_camera.removeEventListener(StatusEvent.STATUS,onCameraStatusHandler);
-			}
 			
-			//当摄像头不存在，或连接不正常时重新获取
-			protected function onInitCamera(event:CloseEvent):void
-			{
-				if(event.detail == Alert.OK)
-				{
-					beginSnapShot();
-				}
+			protected function beginSnapShot():void{
+				var w:PhotoShotComponent = new PhotoShotComponent();
+				w.pic = this;
+				PopUpManager.addPopUp(w,parent,true);
+				PopUpManager.centerPopUp(w);
 			}
-			protected function shot():void{
-				var bd:BitmapData = new BitmapData(120,120);
-				bd.draw(vd,new Matrix());
-				var b:Bitmap = new Bitmap(bd);
-				this.img.source = b;
-				this.setCurrentState("normal");
-				vd.removeChildAt(0);
-			}
-			protected function cancel():void{
-				this.setCurrentState("normal");
-				vd.removeChildAt(0);
-			}
+
 		]]>
 	</fx:Script>
-	<s:Group >
-		<s:VideoDisplay id="vd" width="120" height="120" x="0" y="0" visible="false" visible.shoting="true"/>
-		<mx:Image id="img" smoothBitmapContent="true"  x="0" y="0" width="120" height="120" visible="true" visible.shoting="false"/>
-	</s:Group>
+	<mx:Image id="img" smoothBitmapContent="true"  x="0" y="0" width="120" height="120" />
 	<s:Group width="120" height="20">
-		<s:Button id="uploadButton" label="上传" width="39" height="20" fontSize="9" left="7" click="upload(event)" visible="true" visible.shoting="false"/>
-		<s:Button id="beginShot" label="开始拍照" width="59" height="20" fontSize="9" right="7" click="beginSnapShot(event)" visible="true" visible.shoting="false"/>
-		<s:Button id="shotButton" label="拍照" width="39" height="20" fontSize="9" left="7" visible="false" visible.shoting="true" click="shot()"/>
-		<s:Button id="cancelButton" label="取消" width="39" height="20" fontSize="9" right="7" visible="false" visible.shoting="true" click="cancel()"/>
+		<s:Button id="uploadButton" label="上传" width="39" height="20" fontSize="9" left="7" click="upload(event)" />
+		<s:Button id="beginShot" label="开始拍照" width="59" height="20" fontSize="9" right="7" click="beginSnapShot()"/>
 	</s:Group>
+	
 </s:BorderContainer>

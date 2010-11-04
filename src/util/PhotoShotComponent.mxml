@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   title="拍摄照片" creationComplete="beginSnapShot()"
+			   close="cancel()"
+			   controlBarVisible="true">
+	<s:layout>
+		<s:VerticalLayout gap="1"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.controls.Alert;
+			
+			
+			private static const DEFAULT_CAMERA_WIDTH:Number = 500; //摄像头显示宽度
+			private static const DEFAULT_CAMERA_HEIGHT:Number = 500; //摄像头显示高度
+			
+			private var m_camera:Camera; //定义一个摄像头
+			private var m_localVideo:Video; //定义一个本地视频
+			private var m_pictureBitmapData:BitmapData //定义视频截图
+			
+			public var pic:PhotoComponent;
+			
+			protected function beginSnapShot():void {
+				m_camera = Camera.getCamera();
+				if(m_camera != null)
+				{
+					m_camera.addEventListener(StatusEvent.STATUS,onCameraStatusHandler);
+					m_camera.setMode(DEFAULT_CAMERA_WIDTH,DEFAULT_CAMERA_HEIGHT,30);
+					m_localVideo = new Video();
+					m_localVideo.width = DEFAULT_CAMERA_WIDTH
+					m_localVideo.height = DEFAULT_CAMERA_HEIGHT;
+					m_localVideo.attachCamera(m_camera);
+					vd.width = DEFAULT_CAMERA_WIDTH;
+					vd.height = DEFAULT_CAMERA_HEIGHT;
+					vd.addChild(m_localVideo);
+					
+				}
+				else
+				{
+					Alert.show("没有找到摄像头，是否重新检测?","提示：",Alert.OK|Alert.NO,this,onInitCamera);
+					return;
+				}
+			}
+			//检测摄像头权限事件
+			protected function onCameraStatusHandler(event:StatusEvent):void
+			{
+				if(!m_camera.muted)
+				{
+					shotButton.enabled = true;
+				}
+				m_camera.removeEventListener(StatusEvent.STATUS,onCameraStatusHandler);
+			}
+			
+			//当摄像头不存在，或连接不正常时重新获取
+			protected function onInitCamera(event:CloseEvent):void
+			{
+				if(event.detail == Alert.OK)
+				{
+					beginSnapShot();
+				}
+			}
+			protected function shot():void{
+				var bd:BitmapData = new BitmapData(DEFAULT_CAMERA_WIDTH,DEFAULT_CAMERA_HEIGHT);
+				bd.draw(vd,new Matrix());
+				var b:Bitmap = new Bitmap(bd);
+				pic.img.source = b;
+				m_localVideo.attachCamera(null);
+				m_camera = null;
+				vd.removeChildAt(0);
+				PopUpManager.removePopUp(this);
+			}
+			protected function cancel():void{
+				m_localVideo.attachCamera(null);
+				m_camera = null;
+				vd.removeChildAt(0);
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	<s:VideoDisplay id="vd" x="0" y="0" width="500" height="500"/>
+	<s:Group width="500">
+		<s:Button id="shotButton" label="拍照" click="shot()" left="150"/>
+		<s:Button id="cancelButton" label="取消" click="cancel()" right="150"/>
+	</s:Group>
+</s:TitleWindow>
