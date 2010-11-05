@@ -223,7 +223,9 @@
 						}
 						dataItems.push(pcCb);
 					}else if(pd[i]["dataType"] == "Image"){
+						var app:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
 						var pic:PhotoComponent = new PhotoComponent();
+						pic.app = app;
 						pic.id = pd[i]["itemName"];
 						pic.toolTip = "编辑照片";
 						pic.title = pd[i]["itemName"];
