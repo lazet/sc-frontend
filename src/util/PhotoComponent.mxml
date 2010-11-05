@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		  xmlns:s="library://ns.adobe.com/flex/spark" 
 		  xmlns:mx="library://ns.adobe.com/flex/mx" >
 	
 	<s:layout>
-		<s:VerticalLayout gap="0"/>
+		<s:VerticalLayout gap="0" horizontalAlign="center"/>
 	</s:layout>
 	<fx:Script>
 		<![CDATA[
@@ -17,23 +17,24 @@
 			
 
 			
-			protected var picB64Data:String;
+			protected var picB64Data:String = "";
 			
-			public function set dataInBase64(data:String):void{
+			public function set text(data:String):void{
 				
 				this.picB64Data = data;
-				if(data != null){
+				if(data != null && data != ""){
 					var d:Base64Decoder = new Base64Decoder();
 					d.decode(data);
 					var ba:ByteArray = d.toByteArray();
 					ba.uncompress();
 					img.source = ba;
 				}
-				else
+				else{
 					img.source = null;
+				}
 				
 			}
-			public function getdataInBase64():String{
+			public function get text():String{
 				if(img.content != null){
 					var jpegEncoder:JPEGEncoder=new JPEGEncoder(50);
 					var bd:BitmapData = new BitmapData(330,330);
@@ -72,10 +73,14 @@
 
 		]]>
 	</fx:Script>
+	<fx:Declarations>
+		<fx:String id="title">编辑图片</fx:String>
+	</fx:Declarations>
+	<s:Label id="titleDis" text="{title}"/>
 	<mx:Image id="img" smoothBitmapContent="true"  x="0" y="0" width="120" height="120" />
 	<s:Group width="120" height="20">
 		<s:Button id="uploadButton" label="上传" width="39" height="20" fontSize="9" left="7" click="upload(event)" />
 		<s:Button id="beginShot" label="开始拍照" width="59" height="20" fontSize="9" right="7" click="beginSnapShot()"/>
 	</s:Group>
 	
-</s:BorderContainer>
+</s:Group>

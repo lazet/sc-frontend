@@ -2,7 +2,8 @@
 <s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" title="编辑商品信息"  creationComplete="init(event)" 
-		 implements="org.lcf.IEventPrefer" close="cancel()">
+		 implements="org.lcf.IEventPrefer" close="cancel()"
+		 resize="onResize()">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
@@ -42,6 +43,7 @@
 			import util.ProductCagegoryValidate;
 			import util.SelectOneValidate;
 			import util.StrUtil;
+			import util.PhotoComponent;
 			
 			//状态：初始:initial,提交中saving
 			protected var status:String = "initial";
@@ -130,6 +132,7 @@
 						var moneyTi:TextInput = new TextInput();
 						if(this.p[pd[i]["itemName"]] != ''){
 							moneyTi.text = (Number(this.p[pd[i]["itemName"]])/100.00).toFixed(2);
+							this.p[pd[i]["itemName"]] = moneyTi.text;
 						}
 						moneyTi.setStyle("textAlign","right");
 						fi.label += "(元)"
@@ -219,8 +222,24 @@
 							validaters.push(pcValidator);
 						}
 						dataItems.push(pcCb);
-					}
-					else if(pd[i]["dataType"] == "currentUser" || pd[i]["dataType"] == "now"){
+					}else if(pd[i]["dataType"] == "Image"){
+						var pic:PhotoComponent = new PhotoComponent();
+						pic.id = pd[i]["itemName"];
+						pic.toolTip = "编辑照片";
+						pic.title = pd[i]["itemName"];
+						pic.text = this.p[pd[i]["itemName"]];
+						rightRect.addElement(pic);
+						var sv:StringValidator = new StringValidator();
+						sv.source = pic;
+						sv.property = "text";
+						sv.required = required;
+						sv.requiredFieldError = "请选择照片";
+						validaters.push(sv);
+						
+						dataItems.push(pic);
+						continue;
+						
+					}else if(pd[i]["dataType"] == "currentUser" || pd[i]["dataType"] == "now"){
 						continue;
 					}
 					form.addElement(fi);
@@ -252,6 +271,10 @@
 					else if (dataItems[i] is ComboBox){
 						var cb:ComboBox = dataItems[i] as ComboBox;
 						arg[cb.id] = cb.textInput.text;
+					}
+					else if ( dataItems[i] is PhotoComponent){
+						var pc:PhotoComponent = dataItems[i] as PhotoComponent;
+						arg[pc.id] = pc.text;
 					}
 				}
 				//发送保存
@@ -311,14 +334,22 @@
 				this.status = "initial";
 				Alert.show("" + e.bundle, "保存失败,原因如下：");
 			}
+			protected function onResize():void{
+				//获得应用主窗口，做为父窗口
+				var app:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				this.x = (app.width- this.width)/2;
+				this.y = (app.height - this.height)/2;
+			}
 		]]>
 	</fx:Script>
-	<s:VGroup>
+	<s:HGroup verticalAlign="top">
 		<mx:Form id="form">
 			
 		</mx:Form>
-
-	</s:VGroup>
+		<s:VGroup id="rightRect" horizontalAlign="center">
+			
+		</s:VGroup>
+	</s:HGroup>
 	<s:controlBarContent>
 		<s:Button label="保存" click="save()"/>
 		<s:Button label="取消" click="cancel()"/>

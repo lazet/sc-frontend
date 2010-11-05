@@ -2,7 +2,8 @@
 <s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" title="折扣规则详情"  creationComplete="init(event)" 
-		 implements="org.lcf.IEventPrefer" close="cancel()" xmlns:util="util.*" xmlns:product="manage.modules.product.*">
+		 implements="org.lcf.IEventPrefer" close="cancel()" xmlns:util="util.*" xmlns:product="manage.modules.product.*"
+		 resize="onResize()">
 	<fx:Script>
 		<![CDATA[
 			import com.adobe.serialization.json.JSON;
@@ -120,6 +121,12 @@
 					return;
 				
 				cp.text = (currentPrice / 100).toFixed(2);
+			}
+			protected function onResize():void{
+				//获得应用主窗口，做为父窗口
+				var app:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				this.x = (app.width- this.width)/2;
+				this.y = (app.height - this.height)/2;
 			}
 		]]>
 	</fx:Script>

@@ -27,11 +27,10 @@ package rpc
 		}
 		private function call(re:RpcEvent):void{
 			var client:HTTPService = new HTTPService();
-			client.contentType = "application/json";
 			client.resultFormat = "text";
 			
 			client.url = prefix + re.url;
-			//client.method = "POST";
+			client.method = "POST";
 			client.addEventListener(ResultEvent.RESULT,onCall);
 			client.addEventListener(FaultEvent.FAULT,onError);
 			client.send(re.args);

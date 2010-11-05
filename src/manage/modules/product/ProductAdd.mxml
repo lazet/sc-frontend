@@ -2,7 +2,8 @@
 <s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" title="添加新商品"  creationComplete="init(event)" 
-		 implements="org.lcf.IEventPrefer" close="cancel()">
+		 implements="org.lcf.IEventPrefer" close="cancel()"
+		 resize="onResize()">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
@@ -18,6 +19,7 @@
 			import mx.core.UIComponent;
 			import mx.events.CloseEvent;
 			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
 			import mx.managers.PopUpManager;
 			import mx.validators.CurrencyValidator;
 			import mx.validators.CurrencyValidatorAlignSymbol;
@@ -39,6 +41,7 @@
 			import spark.components.TextInput;
 			
 			import util.ObjectNameDefine;
+			import util.PhotoComponent;
 			import util.ProductCagegoryValidate;
 			import util.SelectOneValidate;
 			
@@ -162,7 +165,7 @@
 						pcCb.toolTip = "多个以空格隔开";
 						fi.label += "(多个以空格隔开)";
 						pcCb.openOnInput = true;
-						pcCb.id = pd[i]["itemName"];;
+						pcCb.id = pd[i]["itemName"];
 						fi.addElement(pcCb);
 						productCategoryArray.push(pcCb);
 						var pcValidator:ProductCagegoryValidate = new ProductCagegoryValidate();
@@ -175,8 +178,23 @@
 						
 						validaters.push(pcValidator);
 						dataItems.push(pcCb);
-					}
-					else if(pd[i]["dataType"] == "currentUser" || pd[i]["dataType"] == "now"){
+					}else if(pd[i]["dataType"] == "Image"){
+						var pic:PhotoComponent = new PhotoComponent();
+						pic.id = pd[i]["itemName"];
+						pic.toolTip = "编辑照片";
+						pic.title = pd[i]["itemName"];
+						rightRect.addElement(pic);
+						var sv:StringValidator = new StringValidator();
+						sv.source = pic;
+						sv.property = "text";
+						sv.required = required;
+						sv.requiredFieldError = "请选择照片";
+						validaters.push(sv);
+						
+						dataItems.push(pic);
+						continue;
+					
+					}else if(pd[i]["dataType"] == "currentUser" || pd[i]["dataType"] == "now"){
 						continue;
 					}
 					form.addElement(fi);
@@ -209,6 +227,10 @@
 						cb.selectedIndex = -1;
 						cb.textInput.text = '';
 					}
+					else if ( dataItems[i] is PhotoComponent){
+						var pc:PhotoComponent = dataItems[i] as PhotoComponent;
+						pc.text = '';
+					}
 				}
 				this.status = "initial";
 			}
@@ -226,7 +248,7 @@
 				//收集参数
 				var arg:Object = new Object();
 				for(var i:int = 0;i< dataItems.length; i++){
-					if(dataItems[i] is TextInput){
+					if(dataItems[i] is TextInput) {
 						var di:TextInput = dataItems[i] as TextInput;
 						arg[di.id] = di.text;
 					}
@@ -238,6 +260,11 @@
 						var cb:ComboBox = dataItems[i] as ComboBox;
 						arg[cb.id] = cb.textInput.text;
 					}
+					else if ( dataItems[i] is PhotoComponent){
+						var pc:PhotoComponent = dataItems[i] as PhotoComponent;
+						arg[pc.id] = pc.text;
+					}
+						
 				}
 				//发送保存
 				this.c.dispatch(new RpcEvent("product/add", arg));
@@ -301,14 +328,23 @@
 				this.status = "initial";
 				Alert.show("" + e.bundle, "保存失败,原因如下：");
 			}
+
+			protected function onResize():void{
+				//获得应用主窗口，做为父窗口
+				var app:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				this.x = (app.width- this.width)/2;
+				this.y = (app.height - this.height)/2;
+			}
 		]]>
 	</fx:Script>
-	<s:VGroup>
+	<s:HGroup verticalAlign="top">
 		<mx:Form id="form">
 			
 		</mx:Form>
-
-	</s:VGroup>
+		<s:VGroup id="rightRect" horizontalAlign="center">
+			
+		</s:VGroup>
+	</s:HGroup>
 	<s:controlBarContent>
 		<s:Button label="保存" click="save()"/>
 		<s:Button label="保存并添加" click="saveAndAdd()"/>

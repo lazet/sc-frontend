@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Image xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  smoothBitmapContent="true">
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.graphics.codec.JPEGEncoder;
+			import mx.managers.PopUpManager;
+			import mx.utils.Base64Decoder;
+			import mx.utils.Base64Encoder;
+			
+			protected var picB64Data:String;
+			
+			public function set text(data:String):void{
+				
+				this.picB64Data = data;
+				if(data != null){
+					var d:Base64Decoder = new Base64Decoder();
+					d.decode(data);
+					var ba:ByteArray = d.toByteArray();
+					ba.uncompress();
+					this.source = ba;
+				}
+				else
+					this.source = null;
+				
+			}
+
+		]]>
+	</fx:Script>
+</mx:Image>

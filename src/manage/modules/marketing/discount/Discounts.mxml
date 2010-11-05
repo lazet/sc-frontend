@@ -103,11 +103,8 @@
 				var pa:DiscountDetail = new DiscountDetail();
 				this.c.put("discount.detail.data",e.bundle);
 				this.c.put("discount.detail",pa);
-				//获得应用主窗口，做为父窗口
-				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
 				//打开
 				PopUpManager.addPopUp(pa,this,true);
-				PopUpManager.centerPopUp(pa);
 				PopUpManager.bringToFront(pa);
 			}
 			public function onEdit(e:GeneralBundleEvent):void{
@@ -115,10 +112,7 @@
 				this.c.put("discount.update.data",e.bundle);
 				this.c.put("discount.update",pa);
 				//获得应用主窗口，做为父窗口
-				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
-				//打开
 				PopUpManager.addPopUp(pa,this,true);
-				PopUpManager.centerPopUp(pa);
 				PopUpManager.bringToFront(pa);
 			}
 			override public function  get preferEventListeners():Array
@@ -270,11 +264,8 @@
 			public function add():void{
 				var pa:DiscountAdd = new DiscountAdd();
 				this.c.put("discount.add",pa);
-				//获得应用主窗口，做为父窗口
-				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
 				//打开
 				PopUpManager.addPopUp(pa,this,true);
-				PopUpManager.centerPopUp(pa);
 				PopUpManager.bringToFront(pa);
 			}
 			public function refreshCurrentPage(e:GeneralBundleEvent):void{

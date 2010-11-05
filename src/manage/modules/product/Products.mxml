@@ -98,11 +98,9 @@
 				var pa:ProductUpdate = new ProductUpdate();
 				this.c.put("product.update.data",e.bundle);
 				this.c.put("product.update",pa);
-				//获得应用主窗口，做为父窗口
-				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				
 				//打开
 				PopUpManager.addPopUp(pa,this,true);
-				PopUpManager.centerPopUp(pa);
 				PopUpManager.bringToFront(pa);
 			}
 			override public function  get preferEventListeners():Array
@@ -195,7 +193,14 @@
 					if(!defs[i]["showInList"])
 						continue;
 					var column:DataGridColumn = new DataGridColumn();
-					if(defs[i]["dataType"] == "Money"){
+					if(defs[i]["dataType"] == "Image"){
+						var imageColumn:DataGridColumn = new DataGridColumn();
+						imageColumn.headerText = defs[i]["itemName"];
+						imageColumn.dataField = defs[i]["itemName"];
+						imageColumn.itemRenderer = new ClassFactory(ImageRenderer);
+						columns.push(imageColumn);
+						continue;
+					}else if(defs[i]["dataType"] == "Money"){
 						column.headerText = defs[i]["itemName"] + "(元)";
 					}else{
 						column.headerText = defs[i]["itemName"];
@@ -237,11 +242,8 @@
 			public function add():void{
 				var pa:ProductAdd = new ProductAdd();
 				this.c.put("product.add",pa);
-				//获得应用主窗口，做为父窗口
-				var parent:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
 				//打开
 				PopUpManager.addPopUp(pa,this,true);
-				PopUpManager.centerPopUp(pa);
 				PopUpManager.bringToFront(pa);
 			}
 			public function refreshCurrentPage(e:GeneralBundleEvent):void{
