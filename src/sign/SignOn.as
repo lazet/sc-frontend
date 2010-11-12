@@ -23,6 +23,7 @@ package sign
 	import spark.components.supportClasses.SkinnableComponent;
 	
 	import util.ObjectNameDefine;
+	import util.RemoteDate;
 	
 	public class SignOn extends SkinnableComponent implements org.lcf.IComponent
 	{
@@ -75,6 +76,7 @@ package sign
 		}
 		public function onGetNow(e:GeneralBundleEvent):void{
 			var now:String = String(e.bundle);
+			this.c.put(ObjectNameDefine.NOW,new RemoteDate(now,this.c));			
 			var today:String = now.substr(0,now.indexOf(" "));
 			this.c.put(ObjectNameDefine.TODAY,today);
 		}
@@ -85,7 +87,7 @@ package sign
 			password.text = '';
 			this.c.dispatch(new RpcEvent("data/now",{}));
 			//切换到管理页面
-			this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.MANAGE_VIEW,"管理主界面",new ManagerView()));
+			this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.MANAGER_VIEW,"信息中心",new ManagerView()));
 			
 		}
 		public function onSignOnFailed(e:GeneralBundleEvent):void{

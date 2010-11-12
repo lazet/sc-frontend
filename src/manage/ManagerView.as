@@ -2,14 +2,14 @@ package manage
 {
 	import flash.events.MouseEvent;
 	
-	
 	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
 	import mx.controls.LinkButton;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
 	
-	import org.lcf.AbstractInnerModule;
+	import operate.OperatorView;
+	
 	import org.lcf.Constants;
 	import org.lcf.IComponent;
 	import org.lcf.IContainer;
@@ -21,13 +21,13 @@ package manage
 	
 	import sign.SignInfo;
 	
-	import spark.components.Button;
 	import spark.components.ButtonBar;
 	import spark.components.DropDownList;
 	import spark.components.Label;
-	import spark.components.PopUpAnchor;
 	import spark.components.supportClasses.SkinnableComponent;
 	import spark.events.IndexChangeEvent;
+	
+	import util.ObjectNameDefine;
 	
 	public class ManagerView extends SkinnableComponent implements IComponent
 	{
@@ -82,7 +82,11 @@ package manage
 			}
 		}
 		protected function onSwitchView(e:IndexChangeEvent):void{
-			
+			if(this.switchView.selectedItem["id"] == ObjectNameDefine.OPERATOR_VIEW){
+				this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.OPERATOR_VIEW,"前台交易",new OperatorView()));
+			}
+			this.switchView.selectedIndex = 0;
+			e.preventDefault();
 		}
 		protected function onSwitchContent(e:IndexChangeEvent):void{
 			var bb:ButtonBar = ButtonBar(e.target);
@@ -115,7 +119,7 @@ package manage
 			else if (instance == this.switchView){
 				this.switchView.requireSelection = true;
 				this.switchView.labelField = "name";
-				this.switchView.dataProvider = new ArrayCollection([{"id":"backend","name":"信息中心"},{"id":"frontend","name":"前台交易"}]);
+				this.switchView.dataProvider = new ArrayCollection([{"id":ObjectNameDefine.MANAGER_VIEW,"name":"后台管理"},{"id":ObjectNameDefine.OPERATOR_VIEW,"name":"前台交易"}]);
 				this.switchView.addEventListener(IndexChangeEvent.CHANGE,onSwitchView);
 			}
 			else if (instance == this.content){

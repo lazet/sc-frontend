@@ -8,7 +8,7 @@
 	</s:layout>
 	<fx:Script>
 		<![CDATA[
-			
+			import mx.events.FlexEvent;
 			import mx.graphics.codec.JPEGEncoder;
 			import mx.managers.PopUpManager;
 			import mx.utils.Base64Decoder;
@@ -87,5 +87,4 @@
 		<s:Button id="uploadButton" label="上传" width="39" height="20" fontSize="9" left="7" click="upload(event)" />
 		<s:Button id="beginShot" label="开始拍照" width="59" height="20" fontSize="9" right="7" click="beginSnapShot()"/>
 	</s:Group>
-	
 </s:Group>
