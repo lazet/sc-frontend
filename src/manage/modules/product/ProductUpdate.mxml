@@ -195,7 +195,7 @@
 					}else if(pd[i]["dataType"] == "ProductCategory"){
 						var pcCb:ComboBox = new ComboBox();
 						var a:Array = this.p[pd[i]["itemName"]];
-						pcCb.addEventListener(FlexEvent.CREATION_COMPLETE,function(){
+						pcCb.addEventListener(FlexEvent.CREATION_COMPLETE,function():void{
 							pcCb.textInput.text = StrUtil.toStr(a);
 						});
 						pcCb.addEventListener(FocusEvent.FOCUS_IN,function(){IME.enabled = true});

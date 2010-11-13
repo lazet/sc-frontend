@@ -161,7 +161,7 @@
 						dataItems.push(soTi);
 					}else if(pd[i]["dataType"] == "ProductCategory"){
 						var pcCb:ComboBox = new ComboBox();
-						pcCb.addEventListener(FocusEvent.FOCUS_IN,function(){IME.enabled = true});
+						pcCb.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
 						pcCb.toolTip = "多个以空格隔开";
 						fi.label += "(多个以空格隔开)";
 						pcCb.openOnInput = true;

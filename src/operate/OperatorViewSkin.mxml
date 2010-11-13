@@ -19,10 +19,11 @@
 			<s:Label text="演示系统" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="30" color="#603A5D"/>
 			<s:Label id="unitName" text="商户1" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="30" color="#603A5D"/>
 			<mx:Spacer width="100%"/>
-			<s:HGroup height="100%" verticalAlign="bottom">
+			<s:VGroup height="100%" horizontalAlign="right" verticalAlign="bottom">
+				<s:Label id="currentTime" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
 				<s:ButtonBar height="50%" id="toolBar"   fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
-			</s:HGroup>
-			<s:VGroup horizontalAlign="right">
+			</s:VGroup>
+			<s:VGroup horizontalAlign="right" >
 				<s:HGroup height="50%" verticalAlign="middle">
 					<s:Label text="当前用户：" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
 					<mx:LinkButton id="loginName"  label="登录用户名" fontFamily="中易宋体" fontSize="14" textDecoration="underline" color="#603A5D"/>

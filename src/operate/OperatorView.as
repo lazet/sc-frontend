@@ -35,6 +35,7 @@ package operate
 	import spark.events.IndexChangeEvent;
 	
 	import util.Consts;
+	import util.EventTypeDefine;
 	import util.ObjectNameDefine;
 	import util.RemoteDate;
 	
@@ -54,6 +55,8 @@ package operate
 		public var content:Overlay;
 		[SkinPart(required="true")]
 		public var switchView:DropDownList;
+		[SkinPart(required="true")]
+		public var currentTime:Label;
 		
 		public var mySettings:MySettings;
 		
@@ -68,9 +71,13 @@ package operate
 			var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
 			var product:EventListenerModel = new EventListenerModel("product.findAll",onProductFindAll);
 			var discount:EventListenerModel = new EventListenerModel("discount.findAll",onDiscountFindAll);
-			return [productDefine,product,discount ];
+			var minute:EventListenerModel = new EventListenerModel(EventTypeDefine.TIME_MINUTE_EVENT,onMinute);
+			return [productDefine,product,discount,minute ];
 		}
-		
+		protected function onMinute(e:GeneralBundleEvent):void{
+			if(this.currentTime != null)
+				this.currentTime.text = "当前时间：" + (e.bundle as String).substr(0,16);
+		}
 		protected function onProductDefineFindAll(e:GeneralBundleEvent):void{
 			this.c.put(ObjectNameDefine.OPERATE_PRODUCT_DEFINE,e.bundle);
 		}
@@ -131,7 +138,7 @@ package operate
 						duration = '0-24';
 					}
 					//解析促销时段
-					var discountDuration:Array = decodePeriod(duration);
+					var discountDuration:Array= decodePeriod(duration);
 					//获取当前时间
 					var now:RemoteDate = this.c.get(ObjectNameDefine.NOW) as RemoteDate;
 					var hour:int = int(now.getHour());

@@ -7,7 +7,6 @@ package util
 	
 	import org.lcf.IContainer;
 	import org.lcf.util.GeneralBundleEvent;
-	import org.osmf.events.TimeEvent;
 
 	public class RemoteDate  
 	{
@@ -23,13 +22,13 @@ package util
 			timer.addEventListener(TimerEvent.TIMER,onTimer);
 			timer.start();
 		}
-		public function onTimer(e:TimeEvent):void{
+		public function onTimer(e:TimerEvent):void{
 			internalDate.minutes +=1;
 			if(internalDate.minutes == 0 && c != null){
 				c.dispatch(new GeneralBundleEvent(EventTypeDefine.TIME_HOUR_EVENT,internalDate.hours));
 			}
 			if(c != null)
-				c.dispatch(new GeneralBundleEvent(EventTypeDefine.TIME_MINUTE_EVENT,internalDate.minutes));
+				c.dispatch(new GeneralBundleEvent(EventTypeDefine.TIME_MINUTE_EVENT,getTime()));
 		}
 		public function getTime():String{
 			var df:DateFormatter = new DateFormatter();
@@ -54,7 +53,7 @@ package util
 			//if there were no miliseconds, add 0 to the end
 			if( match.length < 7 ) match.push('0');
 			
-			return new Date( Number(match[0]), Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4]), Number(match[5]), Number(match[6]) );
+			return new Date( Number(match[0]), Number(match[1]) -1, Number(match[2]), Number(match[3]), Number(match[4]), Number(match[5]), Number(match[6]) );
 		}
 	}
 }

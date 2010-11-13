@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		xmlns:s="library://ns.adobe.com/flex/spark" 
-		xmlns:mx="library://ns.adobe.com/flex/mx">
+		xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:util="util.*">
 	<!-- host component -->
 	<fx:Metadata>
 		[HostComponent("operate.modules.consume.ProductDisplay")]
 	</fx:Metadata>
 	<s:Group top="1" bottom="1" left="1" right="1">
-		<mx:Image id="img" x="0" y="0" width="120" height="120">
-			
-		</mx:Image>
+		<util:PhotoDisplay id="img" x="0" y="0" width="120" height="120"/>
+
 		<s:VGroup right="0" left="121" height="120" top="0">
 			<s:Label id="productName" horizontalCenter="0"/>
 			<s:HGroup>

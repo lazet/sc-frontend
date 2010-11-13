@@ -8,10 +8,10 @@ import flash.utils.Timer;
  * @maxTimes 最大调用次数，为0时为无限次
  * @lizhantao
  */ 
-function callUtilSuccess(func:Function, interval:int = 5000, maxTimes:int= 0):void{
+public function callUtilSuccess(func:Function, interval:int = 5000, maxTimes:int= 0):void{
 	var r:Boolean = func() as Boolean;
 	
-	if(!r && (maxTimes >1 ||  maxTimes == 0){
+	if(!r && (maxTimes >1 ||  maxTimes == 0)){
 		var t:Timer = new Timer(interval,maxTimes > 1?maxTimes -1:0);
 		t.addEventListener(TimerEvent.TIMER,function(event:TimerEvent):void{
 			var result:Boolean = func() as Boolean;
@@ -24,7 +24,7 @@ function callUtilSuccess(func:Function, interval:int = 5000, maxTimes:int= 0):vo
 	}
 }
 
-function decodePeriod(period:String):Array{
+public function decodePeriod(period:String):Array{
 	var hours:Array = new Array();
 	
 	var segments:Array = period.split(",");
@@ -42,7 +42,7 @@ function decodePeriod(period:String):Array{
 	return hours;
 }
 
-function exist(item:String,items:Array):Boolean{
+public function exist(item:String,items:Array):Boolean{
 	if(items == null)return false;
 	for(var i:int = 0;i< items.length;i++){
 		if(item == items[i]){
