@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true">
+	<fx:Script>
+		<![CDATA[
+			public override function set data(d:Object):void{
+				super.data = d;
+				if(undefined == d['商品']){
+					title.visible = true;
+					content.visible = false;
+				}
+				else{
+					title.visible = false;
+					content.visible = true;
+				}
+			}
+
+			protected function num_changeHandler(event:Event):void
+			{
+
+			}
+
+		]]>
+	</fx:Script>
+	<s:HGroup id="content" verticalAlign="middle" gap="3" width="100%" visible="true">
+		<s:Label id="pName" text="{data['商品']}"/>
+		<s:Label id="cPrice" text="{data['价格']}"/>
+
+		<s:NumericStepper id="num" value="@{data['数量']}" minimum="0" maximum="100" change="num_changeHandler(event)" />
+	</s:HGroup>
+	<s:HGroup id="title" verticalAlign="middle" horizontalAlign="center" width="100%" visible="false">
+		<s:Label  text="商品" fontFamily="中易宋体" fontSize="16" color="#603A5D" fontWeight="bold"/>
+		<s:Label  text="价格" fontFamily="中易宋体" fontSize="16" color="#603A5D" fontWeight="bold"/>
+		<s:Label  text="数量" fontFamily="中易宋体" fontSize="16" color="#603A5D" fontWeight="bold"/>
+	</s:HGroup>
+</s:ItemRenderer>

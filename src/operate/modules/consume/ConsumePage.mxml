@@ -2,22 +2,208 @@
 <c:AbstractInnerModule xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		   xmlns:s="library://ns.adobe.com/flex/spark" 
 		   xmlns:c="org.lcf.*"
-		   xmlns:mx="library://ns.adobe.com/flex/mx" layout="horizontal" width="100%" height="100%" horizontalGap="0">
+		   xmlns:mx="library://ns.adobe.com/flex/mx" layout="horizontal" 
+		   width="100%" height="100%" horizontalGap="0"
+		   creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			include "../../../util/ScUtil.as";
+			
+			import mx.collections.ArrayCollection;
+			
+			import operate.modules.consume.ProductDisplay;
+			
+			import org.lcf.Constants;
+			import org.lcf.EventListenerModel;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			
+			import util.Consts;
+			import util.EventTypeDefine;
+			import util.ObjectNameDefine;
+			import util.RemoteDate;
+			
+			var inited:Boolean = false;
+			
+			
+			public function init():void{
+				if(this.c.get(ObjectNameDefine.OPERATE_PRODUCT_DEFINE) == null){
+					//获取商品定义 
+					var arg:Object = new Object();
+					arg[Consts.COLLECTION] = "productDefine";
+					arg[Consts.CONDITION] = "{}";
+					arg[Consts.ORDER_BY] = "{\"order\":1}";
+					this.c.dispatch(new RpcEvent("data/findAll",arg));
+				}
+				if(this.c.get(ObjectNameDefine.OPERATE_PRODUCTS) == null){
+					//加载商品列表
+					var parg:Object = new Object();
+					parg[Consts.COLLECTION] = "product";
+					parg[Consts.CONDITION] = "{}";
+					parg[Consts.ORDER_BY] = "{\"创建时间\":-1}";
+					this.c.dispatch(new RpcEvent("data/findAll",parg));
+				}
+				if(this.c.get(ObjectNameDefine.OPERATE_DISCOUNTS) == null){
+					//加载折扣列表
+					var darg:Object = new Object();
+					darg[Consts.COLLECTION] = "discount";
+					var today:String = this.c.get(ObjectNameDefine.TODAY) as String;
+					darg[Consts.CONDITION] = '{"起始日期":{"$lte":"' + today + '"},"结束日期":{"$gte":"' + today + '"}, "状态":"active"}';
+					darg[Consts.ORDER_BY] = "{\"创建时间\":-1}";
+					this.c.dispatch(new RpcEvent("data/findAll",darg));
+				}
+				if(this.c.get(ObjectNameDefine.OPERATE_PRODUCTS) != null && this.c.get(ObjectNameDefine.OPERATE_DISCOUNTS) != null){
+					if(calculatePrice())
+						inited = true;
+				}
+			}
+			public override function get preferEventListeners():Array
+			{
+				var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
+				var product:EventListenerModel = new EventListenerModel("product.findAll",onProductFindAll);
+				var discount:EventListenerModel = new EventListenerModel("discount.findAll",onDiscountFindAll);
+				var buyProduct:EventListenerModel = new EventListenerModel(EventTypeDefine.CONSUME_BUY_PRODUCT_EVENT,onBuyProduct);
+				return [productDefine,product,discount,buyProduct ];
+			}
+			/**
+			 * 购买某种商品
+			 */ 
+			protected function onBuyProduct(e:GeneralBundleEvent):void{
+				var pd:ProductDisplay = ProductDisplay(e.bundle);
+				//取得商品名称
+				var name:String = pd.productName.text;
+				//判断商品是否在已购买列表中
+				var product:* = null;
+				for(var i:int = 1; i< purchasedProducts.length;i++){
+					var pp:* = purchasedProducts.getItemAt(i);
+					if(pp["商品"] == name ){
+						product = pp;
+						break;
+					}
+				}
+				//如果在列表中，则增加数量
+				if(product != null){
+					product["数量"] = product["数量"] + pd.num.value;
+					purchasedProducts.refresh();
+				}
+				else{
+				//如果不在，则增加一项
+					product = {};
+					product["商品"] = name;
+					product["价格"] = pd.specPrice.text;
+					product["数量"] = pd.num.value;
+					purchasedProducts.addItem(product);
+				}
+				//更新单子总金额	
+				total = total + pd.num.value * Number(pd.specPrice.text);
+				//播放动作
+				
+				//恢复购买数量为1
+				pd.num.value =1;
+			}
+			
+			protected function onProductDefineFindAll(e:GeneralBundleEvent):void{
+				this.c.put(ObjectNameDefine.OPERATE_PRODUCT_DEFINE,e.bundle);
+			}
+			protected function onProductFindAll(e:GeneralBundleEvent):void{
+				this.c.put(ObjectNameDefine.OPERATE_PRODUCTS,e.bundle);
+				if(!inited){
+					if(calculatePrice())
+						inited = true;
+				}
+			}
+			protected function onDiscountFindAll(e:GeneralBundleEvent):void{
+				this.c.put(ObjectNameDefine.OPERATE_DISCOUNTS,e.bundle);
+				if(!inited){
+					if(calculatePrice())
+						inited = true;
+				}
+			}
+			protected function calculatePrice():Boolean{
+				var products:Array = c.get(ObjectNameDefine.OPERATE_PRODUCTS) as Array;
+				var discounts:Array = c.get(ObjectNameDefine.OPERATE_DISCOUNTS) as Array;
+				if(products == null || discounts == null){
+					return false;
+				}
+				
+				for(var i:int = 0; i < products.length; i++){
+					var p:* = products[i];
+					var pn:String = p["商品名称"] as String;
+					var cp:Number = Number(p["当前价格"]);
+					var category:Array = p["品类"] as Array;
+					var specPrice:Number = cp;
+					//循环判断折扣，看是否适合本商品，如果适合，则计算特价，如果是最低的特价，则更新最低价
+					for(var j:int = 0; j < discounts.length;j++){
+						var d:* = discounts[j];
+						var duration:String = null;
+						
+						if(isNaN(d["促销时段"]))
+							duration = '0-24';
+						else
+							duration = d["促销时段"];
+						if(duration == null || duration == ''){
+							duration = '0-24';
+						}
+						//解析促销时段
+						var discountDuration:Array= decodePeriod(duration);
+						//获取当前时间
+						var now:RemoteDate = this.c.get(ObjectNameDefine.NOW) as RemoteDate;
+						var hour:int = int(now.getHour());
+						//判断当前时间是否在优惠时段
+						if(isNaN(discountDuration[hour])){
+							continue;
+						}
+						if(d["类型"] == "商品特价"){
+							if(d["商品"] == pn){
+								if(specPrice > d["特价"]){
+									specPrice = d["特价"];
+								}
+							}
+						}
+						else if(d["类型"] == "品类打折"){
+							if(exist(d["品类"],category)){
+								if(specPrice > cp * d["折扣"]/100.0){
+									specPrice = cp * d["折扣"]/100.0;
+								}
+							}
+						}
+						else if(d["类型"] == "全场打折"){
+							if(specPrice > cp * d["折扣"]/100.0){
+								specPrice = cp * d["折扣"]/100.0;
+							}
+						}
+					}
+					p["特价"] = specPrice;
+					var displayProduct:ProductDisplay = new ProductDisplay(p,this.c);
+					tg.addElement(displayProduct);
+				}				
+				return true;
+			}
+		]]>
+	</fx:Script>
 	<fx:Declarations>
-		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:ArrayCollection id="purchasedProducts">
+			<fx:Object 数量="1"></fx:Object>	
+		</s:ArrayCollection>	
+		<fx:Number id="total">0</fx:Number>
 	</fx:Declarations>
 	<s:VGroup width="70%" height="100%" gap="0">
-		<s:TileGroup width="100%" height="100%"/>
+		<s:Scroller width="100%" height="100%" >
+			<s:TileGroup id="tg" width="100%" height="100%" orientation="rows" horizontalGap="2" verticalGap="3" requestedColumnCount="3"   />
+		</s:Scroller>
 		<s:Label id="ad" text="广告"/>
 	</s:VGroup>
 	<s:VGroup height="100%" width="30%" gap="0">
-		<s:Label text="已购商品列表" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
-		<s:List id="purchased" width="100%" height="100%"/>
+		<s:Label text="已购商品列表：" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
+		<s:List id="purchased" width="100%" height="100%" dataProvider="{purchasedProducts}" itemRenderer="operate.modules.consume.PurchasedProductRenderer" />
+		<s:HGroup verticalAlign="middle">
+			<s:Label text="总计(元)："/><s:Label id="sum" text="{total.toFixed(2)}"  fontFamily="中易宋体" fontSize="16" color="#603A5D" fontWeight="bold" />
+		</s:HGroup>
 		<s:Group width="100%">
 			<s:Button id="checkingOut" label="结帐" left="0"/>
 			
 			<s:Button id="cancel" label="放弃" right="0"/>
 		</s:Group>
-		
 	</s:VGroup>
 </c:AbstractInnerModule>

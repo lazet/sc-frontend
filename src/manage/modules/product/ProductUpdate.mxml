@@ -198,7 +198,7 @@
 						pcCb.addEventListener(FlexEvent.CREATION_COMPLETE,function():void{
 							pcCb.textInput.text = StrUtil.toStr(a);
 						});
-						pcCb.addEventListener(FocusEvent.FOCUS_IN,function(){IME.enabled = true});
+						pcCb.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
 						pcCb.toolTip = "多个以空格隔开";
 						fi.label += "(多个以空格隔开)";
 						pcCb.openOnInput = true;

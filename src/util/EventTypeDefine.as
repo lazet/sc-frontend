@@ -14,5 +14,8 @@ package util
 		
 		static public var TIME_HOUR_EVENT:String = "TIME_HOUR_EVENT";
 		static public var TIME_MINUTE_EVENT:String = "TIME_MINUTE_EVENT";
+		
+		
+		static public var CONSUME_BUY_PRODUCT_EVENT:String = "CONSUME_BUY_PRODUCT_EVENT";
 	}
 }

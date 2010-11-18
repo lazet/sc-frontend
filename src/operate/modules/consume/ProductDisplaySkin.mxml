@@ -6,17 +6,31 @@
 	<fx:Metadata>
 		[HostComponent("operate.modules.consume.ProductDisplay")]
 	</fx:Metadata>
+
 	<s:Group top="1" bottom="1" left="1" right="1">
 		<util:PhotoDisplay id="img" x="0" y="0" width="120" height="120"/>
-
+		<s:Rect right="0" left="121" height="120" top="0">
+			<s:fill>
+				<s:LinearGradient rotation="90" >
+					<s:GradientEntry color="#DDDDDD" />
+					<s:GradientEntry color="#000000" />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
 		<s:VGroup right="0" left="121" height="120" top="0">
-			<s:Label id="productName" horizontalCenter="0"/>
+			<s:Label id="productName" horizontalCenter="0" fontWeight="bold" fontSize="16" color="blue"/>
 			<s:HGroup>
+				<s:Label text="时价(元)："/>
 				<s:Label id="specPrice"/>
-				<s:Label id="currentPrice" color="#B5B5B5"  fontStyle="italic" fontWeight="bold" text="aaa"/>
+				<s:Label text="原价(元)" color="#B5B5B5"  fontStyle="italic" fontWeight="bold"/>
+				<s:Label id="currentPrice" color="#B5B5B5"  fontStyle="italic" fontWeight="bold"/>
 			</s:HGroup>
-			<s:Button id="buyButton"/>
-			<s:Label id="ad"/>
+			<mx:Spacer height="100%"/>
+			<s:HGroup verticalAlign="middle">
+				<s:Label text="购买数量："/><s:NumericStepper id="num" value="1" stepSize="1" minimum="1" maximum="100"/>
+			</s:HGroup>
+			<s:Button id="buyButton" label="购买"/>
+			<s:Label id="ad" includeInLayout="false" visible="false"/>
 		</s:VGroup>
 	</s:Group>	
 </s:Skin>

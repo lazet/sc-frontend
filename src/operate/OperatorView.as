@@ -42,7 +42,7 @@ package operate
 	
 	public class OperatorView extends SkinnableComponent implements IComponent
 	{
-		include "../util/ScUtil.as";
+
 		[SkinPart(required="true")]
 		public var unitName:Label;
 		[SkinPart(required="true")]
@@ -68,25 +68,14 @@ package operate
 		}
 		public function get preferEventListeners():Array
 		{
-			var productDefine:EventListenerModel = new EventListenerModel("productDefine.findAll",onProductDefineFindAll);
-			var product:EventListenerModel = new EventListenerModel("product.findAll",onProductFindAll);
-			var discount:EventListenerModel = new EventListenerModel("discount.findAll",onDiscountFindAll);
 			var minute:EventListenerModel = new EventListenerModel(EventTypeDefine.TIME_MINUTE_EVENT,onMinute);
-			return [productDefine,product,discount,minute ];
+			return [minute ];
 		}
 		protected function onMinute(e:GeneralBundleEvent):void{
 			if(this.currentTime != null)
 				this.currentTime.text = "当前时间：" + (e.bundle as String).substr(0,16);
 		}
-		protected function onProductDefineFindAll(e:GeneralBundleEvent):void{
-			this.c.put(ObjectNameDefine.OPERATE_PRODUCT_DEFINE,e.bundle);
-		}
-		protected function onProductFindAll(e:GeneralBundleEvent):void{
-			this.c.put(ObjectNameDefine.OPERATE_PRODUCTS,e.bundle);
-		}
-		protected function onDiscountFindAll(e:GeneralBundleEvent):void{
-			this.c.put(ObjectNameDefine.OPERATE_DISCOUNTS,e.bundle);
-		}
+
 		public function OperatorView()
 		{
 			super();
@@ -95,82 +84,9 @@ package operate
 			this.setStyle("skinClass",OperatorViewSkin);
 		}
 		protected function init():void{
-			//获取商品定义 
-			var arg:Object = new Object();
-			arg[Consts.COLLECTION] = "productDefine";
-			arg[Consts.CONDITION] = "{}";
-			arg[Consts.ORDER_BY] = "{\"order\":1}";
-			this.c.dispatch(new RpcEvent("data/findAll",arg));
-			//加载商品列表
-			var parg:Object = new Object();
-			parg[Consts.COLLECTION] = "product";
-			parg[Consts.CONDITION] = "{}";
-			parg[Consts.ORDER_BY] = "{\"创建时间\":-1}";
-			this.c.dispatch(new RpcEvent("data/findAll",parg));
-			//加载折扣列表
-			var darg:Object = new Object();
-			darg[Consts.COLLECTION] = "discount";
-			var today:String = this.c.get(ObjectNameDefine.TODAY) as String;
-			darg[Consts.CONDITION] = '{"起始日期":{"$lte":"' + today + '"},"结束日期":{"$gte":"' + today + '"}, "状态":"active"}';
-			darg[Consts.ORDER_BY] = "{\"创建时间\":-1}";
 			
-			this.c.dispatch(new RpcEvent("data/findAll",darg));
 		}
-		protected function calculatePrice():Boolean{
-			var products:Array = c.get(ObjectNameDefine.OPERATE_PRODUCTS) as Array;
-			var discounts:Array = c.get(ObjectNameDefine.OPERATE_DISCOUNTS) as Array;
-			if(products == null || discounts == null){
-				return false;
-			}
-			
-			var lastProductCollection:ArrayCollection = new ArrayCollection();
-			for(var i:int = 0; i < products.length; i++){
-				var p:* = products[i];
-				var pn:String = p["商品名称"] as String;
-				var cp:Number = Number(p["当前价格"]);
-				var category:Array = p["品类"] as Array;
-				var specPrice:Number = cp;
-				//循环判断折扣，看是否适合本商品，如果适合，则计算特价，如果是最低的特价，则更新最低价
-				for(var j:int = 0; i < discounts.length;j++){
-					var d:* = discounts[j];
-					var duration:String = d["促销时段"];
-					if(duration == null || duration == ''){
-						duration = '0-24';
-					}
-					//解析促销时段
-					var discountDuration:Array= decodePeriod(duration);
-					//获取当前时间
-					var now:RemoteDate = this.c.get(ObjectNameDefine.NOW) as RemoteDate;
-					var hour:int = int(now.getHour());
-					//判断当前时间是否在优惠时段
-					if(discountDuration[hour] != 1){
-						continue;
-					}
-					if(d["类型"] == "商品特价"){
-						if(d["商品名称"] == pn){
-							if(specPrice > d["特价"]){
-								specPrice = d["特价"];
-							}
-						}
-					}
-					else if(d["类型"] == "品类折扣"){
-						if(exist(d["品类"],category)){
-							if(specPrice > d["特价"]){
-								specPrice = d["特价"];
-							}
-						}
-					}
-					else if(d["类型"] == "全场折扣"){
-						if(specPrice > d["特价"]){
-							specPrice = d["特价"];
-						}
-					}
-				}
-				p["specPrice"] = specPrice;
-			}
-			
-			return true;
-		}
+		
 		protected function onExitClicked(e:MouseEvent):void{
 			Alert.show("确定要退出系统吗？","系统提示",Alert.OK | Alert.CANCEL,this,onExit);
 		}
