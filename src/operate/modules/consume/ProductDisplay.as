@@ -22,7 +22,9 @@ package operate.modules.consume
 			this.c = container;
 			this.setStyle("skinClass",ProductDisplaySkin);
 		}
-		protected var data:*;
+		[Bindable]
+		public  var data:*;
+		
 		protected var c:IContainer;
 		
 		[SkinPart(required="true")]

@@ -24,6 +24,7 @@
     <module application="src/Main.mxml" destPath="manage/modules/main/MainPage.swf" optimize="true" sourcePath="src/manage/modules/main/MainPage.mxml"/>
     <module application="src/Main.mxml" destPath="manage/modules/marketing/discount/Discounts.swf" optimize="true" sourcePath="src/manage/modules/marketing/discount/Discounts.mxml"/>
     <module application="src/Main.mxml" destPath="operate/modules/consume/ConsumePage.swf" optimize="true" sourcePath="src/operate/modules/consume/ConsumePage.mxml"/>
+    <module application="src/Main.mxml" destPath="operate/modules/consume/CheckoutPage.swf" optimize="true" sourcePath="src/operate/modules/consume/CheckoutPage.mxml"/>
   </modules>
   <buildCSSFiles/>
 </actionScriptProperties>

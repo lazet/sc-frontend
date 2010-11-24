@@ -17,5 +17,8 @@ package util
 		
 		
 		static public var CONSUME_BUY_PRODUCT_EVENT:String = "CONSUME_BUY_PRODUCT_EVENT";
+		static public var CONSUME_ADJUST_PRODUCT_EVENT:String = "CONSUME_ADJUST_PRODUCT_EVENT";
+		
+		static public var PURCHASED_PRODUCT_REFRESH:String = "PURCHASED_PRODUCT_REFRESH";
 	}
 }

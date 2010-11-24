@@ -5,34 +5,41 @@
 				autoDrawBackground="true">
 	<fx:Script>
 		<![CDATA[
-			public override function set data(d:Object):void{
-				super.data = d;
-				if(undefined == d['商品']){
-					title.visible = true;
-					content.visible = false;
-				}
-				else{
-					title.visible = false;
-					content.visible = true;
-				}
-			}
+			import mx.controls.Alert;
+			
+			import util.EventTypeDefine;
+			
+			import org.lcf.util.GeneralBundleEvent;
 
 			protected function num_changeHandler(event:Event):void
 			{
-
+				data['原数量'] = data['数量'];
+				data['数量'] = num.value;
+				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.CONSUME_ADJUST_PRODUCT_EVENT,data));
+				
 			}
 
 		]]>
 	</fx:Script>
-	<s:HGroup id="content" verticalAlign="middle" gap="3" width="100%" visible="true">
+	<s:Rect left="0" right="0" top="0" bottom="0">
+		<s:fill>
+			<s:LinearGradient rotation="135" >
+				<s:GradientEntry color="#222222" />
+				<s:GradientEntry color="#999999" />
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	<s:VGroup width="100%" paddingBottom="3">
 		<s:Label id="pName" text="{data['商品']}"/>
-		<s:Label id="cPrice" text="{data['价格']}"/>
-
-		<s:NumericStepper id="num" value="@{data['数量']}" minimum="0" maximum="100" change="num_changeHandler(event)" />
-	</s:HGroup>
-	<s:HGroup id="title" verticalAlign="middle" horizontalAlign="center" width="100%" visible="false">
-		<s:Label  text="商品" fontFamily="中易宋体" fontSize="16" color="#603A5D" fontWeight="bold"/>
-		<s:Label  text="价格" fontFamily="中易宋体" fontSize="16" color="#603A5D" fontWeight="bold"/>
-		<s:Label  text="数量" fontFamily="中易宋体" fontSize="16" color="#603A5D" fontWeight="bold"/>
-	</s:HGroup>
+		<s:HGroup  width="100%">
+			<s:Label text="价格(元)："/>
+			<s:Label id="cPrice" text="{data['价格']}"/>
+		</s:HGroup>
+		<s:HGroup width="100%">
+			<s:Label text="数量："/>
+			<s:NumericStepper id="num" value="{data['数量']}" minimum="0" maximum="100" change="num_changeHandler(event)"/>
+			<s:Label text="{data['单位']}"/>
+		</s:HGroup>
+	</s:VGroup>
+	
 </s:ItemRenderer>

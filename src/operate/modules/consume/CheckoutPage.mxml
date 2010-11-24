@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:AbstractInnerModule xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:c="org.lcf.*"
+					   xmlns:mx="library://ns.adobe.com/flex/mx" layout="horizontal" 
+					   width="100%" height="100%" horizontalGap="0"
+					   creationComplete="onInit()" >
+	<fx:Script>
+		<![CDATA[
+			public function onInit():void{
+				//从容器里取出数据，并为purchasedProducts赋值
+				
+				//从容器中取出合计数，并赋值
+				
+				
+			}
+		]]>
+	</fx:Script>
+	<s:Panel title="结帐" verticalCenter="0" horizontalCenter="0">
+		<s:VGroup width="100%" height="100%">
+			
+			<s:VGroup>
+				<s:Label text="商品清单："/>
+				<mx:DataGrid id="purchasedProducts">
+					<mx:columns>
+						<mx:DataGridColumn headerText="商品"/>
+						<mx:DataGridColumn headerText="价格（元）"/>
+						<mx:DataGridColumn headerText="数量"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<s:Label id="sum" text="合计："/>
+			</s:VGroup>
+			<s:HGroup>
+				<s:Label text="联系人："/><s:Label text="联系电话："/>
+			</s:HGroup>
+			<s:HGroup>
+				<s:Label text="配送位置："/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:Group bottom="2" width="100%">
+			<s:Button id="back" label="返回" left="2"/>
+			<s:HGroup horizontalAlign="right" right="2">
+				<s:Button label="结帐"/>
+				<s:Button label="结帐并打印"/>
+				<s:Button label="放弃"/>
+			</s:HGroup>
+		</s:Group>
+	</s:Panel>	
+</c:AbstractInnerModule>

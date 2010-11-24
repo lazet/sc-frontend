@@ -7,17 +7,17 @@
 		[HostComponent("operate.modules.consume.ProductDisplay")]
 	</fx:Metadata>
 
-	<s:Group top="1" bottom="1" left="1" right="1">
+	<s:Group top="1" bottom="1" left="1" right="1" >
 		<util:PhotoDisplay id="img" x="0" y="0" width="120" height="120"/>
-		<s:Rect right="0" left="121" height="120" top="0">
+		<s:Rect right="0" left="120" height="120" top="0">
 			<s:fill>
-				<s:LinearGradient rotation="90" >
+				<s:LinearGradient rotation="45" >
 					<s:GradientEntry color="#DDDDDD" />
 					<s:GradientEntry color="#000000" />
 				</s:LinearGradient>
 			</s:fill>
 		</s:Rect>
-		<s:VGroup right="0" left="121" height="120" top="0">
+		<s:VGroup right="0" left="120" height="120" top="0">
 			<s:Label id="productName" horizontalCenter="0" fontWeight="bold" fontSize="16" color="blue"/>
 			<s:HGroup>
 				<s:Label text="时价(元)："/>
@@ -27,7 +27,8 @@
 			</s:HGroup>
 			<mx:Spacer height="100%"/>
 			<s:HGroup verticalAlign="middle">
-				<s:Label text="购买数量："/><s:NumericStepper id="num" value="1" stepSize="1" minimum="1" maximum="100"/>
+				<s:Label text="购买数量："/>
+				<s:NumericStepper id="num" value="1" stepSize="1" minimum="1" maximum="100"/>
 			</s:HGroup>
 			<s:Button id="buyButton" label="购买"/>
 			<s:Label id="ad" includeInLayout="false" visible="false"/>
