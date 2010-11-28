@@ -10,9 +10,9 @@ package util
 
 	public class RemoteDate  
 	{
-		var internalDate:Date;
-		var timer:Timer;
-		var c:IContainer;
+		public var internalDate:Date;
+		public var timer:Timer;
+		public var c:IContainer;
 		
 		public function RemoteDate(date:String,container:IContainer = null)
 		{

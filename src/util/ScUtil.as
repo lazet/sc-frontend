@@ -100,3 +100,15 @@ public function uuid():String{
 public function randomString():String{
 	return shorturl(uuid());
 }
+/**
+ * 生成一个缩写
+ */ 
+public function abbreviate(text:String,length:int):String{
+	if(text == null){
+		return '';
+	}else if(text.length <= length){
+		return text;
+	}else{
+		return text.substr(0,length -3) + '...';
+	}
+}

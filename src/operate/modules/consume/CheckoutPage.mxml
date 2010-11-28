@@ -1,49 +1,435 @@
 <?xml version="1.0" encoding="utf-8"?>
 <c:AbstractInnerModule xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
 					   xmlns:c="org.lcf.*"
-					   xmlns:mx="library://ns.adobe.com/flex/mx" layout="horizontal" 
-					   width="100%" height="100%" horizontalGap="0"
-					   creationComplete="onInit()" >
+					   layout="absolute"
+					   width="100%" height="100%"
+					   creationComplete="onInit()" xmlns:consume="operate.modules.consume.*" >
 	<fx:Script>
 		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.validators.Validator;
+			
+			import org.lcf.Constants;
+			import org.lcf.EventListenerModel;
+			import org.lcf.util.GeneralBundleEvent;
+			import org.lcf.util.ModuleEvent;
+			
+			import rpc.RpcEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			import util.Consts;
+			import util.EventTypeDefine;
+			import util.ObjectNameDefine;
+			
+			protected var saving:Boolean = false;
+			
 			public function onInit():void{
 				//从容器里取出数据，并为purchasedProducts赋值
-				
+				var purchasedProducts:ArrayCollection=  this.c.get(ObjectNameDefine.PURCHASED_PRODUCTS) as ArrayCollection;
+				purchased.dataProvider = purchasedProducts;
 				//从容器中取出合计数，并赋值
-				
-				
+				var total:Number = this.c.get(ObjectNameDefine.PURCHASED_SUM) as Number;
+				sum.text = total.toFixed(2);
 			}
+			
+			public function back():void{
+				this.c.dispatch(new ModuleEvent(Constants.SELECT_MODULE_EVENT,"operate/modules/consume/ConsumePage.swf"));
+			}
+			
+			public override function get preferEventListeners():Array
+			{
+				var purchasedProductRefresh:EventListenerModel = new EventListenerModel(EventTypeDefine.PURCHASED_PRODUCT_REFRESH,onProductRefresh);
+				var cancel:EventListenerModel = new EventListenerModel(EventTypeDefine.PURCHASED_PRODUCT_CANCEL,onPurchaseCancel);
+				var saveSuccess:EventListenerModel = new EventListenerModel(EventTypeDefine.PURCHASED_PRODUCT_SAVED,onSaved);
+				return [purchasedProductRefresh,cancel,saveSuccess];
+			}
+			public function onProductRefresh(e:GeneralBundleEvent):void{
+				//从容器里取出数据，并为purchasedProducts赋值
+				var purchasedProducts:ArrayCollection=  this.c.get(ObjectNameDefine.PURCHASED_PRODUCTS) as ArrayCollection;
+				purchased.dataProvider = purchasedProducts;
+				//从容器中取出合计数，并赋值
+				var total:Number = this.c.get(ObjectNameDefine.PURCHASED_SUM) as Number;
+				sum.text = total.toFixed(2);
+				saving = false;
+			}
+			public function onPurchaseCancel(e:GeneralBundleEvent):void{
+				if(e.bundle == Consts.FROM_CHECKOUT){
+					this.c.dispatch(new ModuleEvent(Constants.SELECT_MODULE_EVENT,"operate/modules/consume/ConsumePage.swf"));
+				}
+			}
+			public function cancel():void{
+				Alert.show("订单未结帐，确定要关闭吗？","系统提示",Alert.OK | Alert.CANCEL,this,onExit);
+			}
+			public function onExit(e:CloseEvent):void{
+				if(e.detail == Alert.OK){
+					this.c.dispatch(new GeneralBundleEvent(EventTypeDefine.PURCHASED_PRODUCT_CANCEL, Consts.FROM_CHECKOUT));
+				}
+			}
+			public function checkoutAndPrint():void{
+				//禁止重复提交
+				if(this.saving){
+					Alert.show("正在保存中，请不要重复提交","保存提示");
+					return;
+				}
+				
+				//验证数据
+				var results:Array = null;
+				if(this.currentState == "cash"){
+					cashValidator.required = true;
+					results = Validator.validateAll([customerNameValidator, telephoneValidator, siteValidator, cashValidator]);
+				}else if(this.currentState == "bank"){
+					bankValidator.required = true;
+					results = Validator.validateAll([customerNameValidator, telephoneValidator, siteValidator, bankValidator]);
+				}else if(this.currentState == "coupon"){
+					couponValidator.required = true;
+					couponNumValidator.required = true;
+					results = Validator.validateAll([customerNameValidator, telephoneValidator, siteValidator, couponValidator, couponNumValidator]);
+				}else if(this.currentState == "other"){
+					otherValidator.required = true;
+					otherTypeValidator.required = true;
+					results = Validator.validateAll([customerNameValidator, telephoneValidator, siteValidator, otherValidator, otherTypeValidator]);
+				}else if(this.currentState == "free"){
+					results = Validator.validateAll([customerNameValidator, telephoneValidator, siteValidator, freeValidator]);
+				}else if(this.currentState == "mix"){
+					cashValidator.required = false;
+					bankValidator.required = false;
+					couponValidator.required = false;
+					couponNumValidator.required = false;
+					otherValidator.required = false;
+					otherTypeValidator.required = false;
+					results = Validator.validateAll([customerNameValidator, telephoneValidator, siteValidator, cashValidator,bankValidator,couponValidator, couponNumValidator,couponConsistantValidator, otherValidator, otherTypeValidator,otherConsistantValidator]);
+				}
+				
+				if(results.length > 0){
+					return;
+				}
+				
+				
+				//保存数据
+				var arg:Object = new Object();
+				
+				var productList:Array = new Array();
+				var ps:Array = (purchased.dataProvider as ArrayCollection).toArray();
+				for(var i:int = 0; i< ps.length; i++){
+					var o:Object = new Object();
+					o["商品"] = ps[i]["商品"];
+					o["价格"] = ps[i]["价格"];
+					o["数量"] = ps[i]["数量"];
+					productList.push(o);
+				}
+				
+				arg["商品列表"] = productList;
+				arg["消费总金额"] = sum.text;
+				arg["联系人"] = customerName.text;
+				arg["联系电话"] = telephone.text;
+				arg["配送位置"] = site.text;
+				arg["支付方式"] = this.payWay.selectedItem["label"];
+				
+				var totalMoney:Number = 0;
+				var couponMoney:Number = 0;
+				//填写支付方式
+				var payWays:Array = new Array();
+				if(this.currentState == "cash"){
+					var payByCash:Object = new Object();
+					payByCash["方式"] = "现金";
+					payByCash["金额"] = cash.text;
+					payByCash["找零"] = change.text;
+					totalMoney = totalMoney + Number(cash.text);
+					payWays.push(payByCash);
+				}else if(this.currentState == "bank"){
+					var payByBank:Object = new Object();
+					payByBank["方式"] = "银行卡";
+					payByBank["金额"] = bank.text;
+					totalMoney = totalMoney + Number(bank.text);
+					payWays.push(payByBank);
+				}else if(this.currentState == "coupon"){
+					var payByCoupon:Object = new Object();
+					payByCoupon["方式"] = "代金券";
+					payByCoupon["金额"] = couponPay.text;
+					totalMoney = totalMoney + Number(couponPay.text);
+					couponMoney = Number(couponPay.text);
+					payByCoupon["数量"] = couponNum.text;
+					payWays.push(payByCoupon);
+				}else if(this.currentState == "other"){
+					var payByOther:Object = new Object();
+					payByOther["方式"] = otherType.text;
+					payByOther["金额"] = otherPay.text;
+					totalMoney = totalMoney + Number(otherPay.text);
+					payWays.push(payByOther);
+				}else if(this.currentState == "free"){
+					var payByFree:Object = new Object();
+					payByFree["方式"] = "免单";
+					payByFree["原因"] = freeReason.text;
+					totalMoney = totalMoney + Number(sum.text);
+					payWays.push(payByFree);
+				}else if(this.currentState == "mix"){
+					if(!isNaN(Number(cash.text))){
+						var payByMixCash:Object = new Object();
+						payByMixCash["方式"] = "现金";
+						payByMixCash["金额"] = cash.text;
+						totalMoney = totalMoney + Number(cash.text);
+						payWays.push(payByMixCash);
+					}
+				 	if(!isNaN(Number(bank.text))){
+						var payByMixBank:Object = new Object();
+						payByMixBank["方式"] = "银行卡";
+						payByMixBank["金额"] = bank.text;
+						totalMoney = totalMoney + Number(bank.text);
+						payWays.push(payByMixBank);
+					}
+					if(!isNaN(Number(couponPay.text))){
+						var payByMixCoupon:Object = new Object();
+						payByMixCoupon["方式"] = "代金券";
+						payByMixCoupon["金额"] = couponPay.text;
+						payByMixCoupon["数量"] = couponNum.text;
+						totalMoney = totalMoney + Number(couponPay.text);
+						couponMoney = Number(couponPay.text);
+						payWays.push(payByMixCoupon);
+					}
+					if(!isNaN(Number(otherPay.text))){
+						var payByMixOther:Object = new Object();
+						payByMixOther["方式"] = otherType.text;
+						payByMixOther["金额"] = otherPay.text;
+						totalMoney = totalMoney + Number(otherPay.text);
+						payWays.push(payByMixOther);
+					}
+				}
+				arg["支付信息"] = payWays;
+				
+				if(this.currentState == "cash"){
+					if(totalMoney < Number(sum.text)){
+						msg.text = "支付金额不能小于消费总金额，请修改支付金额";
+						return;
+					}
+				}
+				else{
+					//判断是否能够支付
+					if(couponMoney == 0 ){
+						if(totalMoney != Number(sum.text)){
+							msg.text = "支付金额不等于消费总金额，请修改支付金额";
+							return;
+						}
+					}
+					else{
+						if(totalMoney < Number(sum.text)){
+							msg.text = "支付金额不足，请增加支付金额";
+							return;
+						}
+						if(totalMoney - couponMoney > Number(sum.text)){
+							msg.text = "支付金额过大，请减少支付金额";
+							return;
+						}
+					}
+				}
+				this.saving = true;
+				//总参数
+				var sendArg:Object = new Object();
+				sendArg["consumeRecord"] = JSON.encode(arg);
+				this.c.dispatch(new RpcEvent("consumeRecord/add",sendArg));
+			}
+			public function onSaved(e:GeneralBundleEvent):void{
+				this.saving = false;
+				this.customerName.text = "";
+				this.telephone.text = "";
+				this.site.text = "";
+				
+				if(this.currentState == "cash"){
+					this.cash.text = "";
+					this.change.text = "";
+				}else if(this.currentState == "bank"){
+					this.bank.text = "";
+				}else if(this.currentState == "coupon"){
+					this.couponPay.text = "";
+					this.couponNum.text = "";
+				}else if(this.currentState == "other"){
+					this.otherPay.text = "";
+					this.otherType.text = "";
+				}else if(this.currentState == "free"){
+					this.freeReason.text = "";
+				}else if(this.currentState == "mix"){
+					this.cash.text = "";
+					this.bank.text = "";
+					this.couponPay.text = "";
+					this.couponNum.text = "";
+					this.otherPay.text = "";
+					this.otherType.text = "";					
+				}
+
+				this.msg.text = "";
+				this.payWay.selectedIndex = 0;
+				this.changeState(null);
+				
+				//切换到消费页面
+				this.c.dispatch(new ModuleEvent(Constants.SELECT_MODULE_EVENT,"operate/modules/consume/ConsumePage.swf"));
+			}
+			protected function onCashChange():void{
+				if(isNaN(Number(this.cash.text))) return;
+				if( Number(this.cash.text) >= Number(this.sum.text) ){
+					this.change.text = (Number(this.cash.text) - Number(this.sum.text)).toFixed(2);
+				} 
+			}
+			protected function changeState(event:IndexChangeEvent):void
+			{
+				this.cashValidator.required = false;
+				this.bankValidator.required = false;
+				this.couponValidator.required = false;
+				this.couponNumValidator.required = false;
+				this.otherValidator.required = false;
+				this.otherTypeValidator.required = false;
+				this.freeValidator.required = false;
+				
+				this.setCurrentState(payWay.selectedItem['payType']);
+			}
+
 		]]>
 	</fx:Script>
-	<s:Panel title="结帐" verticalCenter="0" horizontalCenter="0">
-		<s:VGroup width="100%" height="100%">
-			
+	<fx:Declarations>
+		<mx:StringValidator id="customerNameValidator" minLength="1" maxLength="20" required="true" source="{customerName}" property="text"/>
+		<mx:StringValidator id="telephoneValidator" minLength="1" maxLength="40" required="true" source="{telephone}" property="text"/>
+		<mx:StringValidator id="siteValidator" minLength="1" maxLength="200" required="true" source="{site}" property="text"/>
+		
+		<mx:CurrencyValidator id="cashValidator" alignSymbol="right" allowNegative="false" minValue="0.01" maxValue="100000000" 
+							  required="true" precision="2" source="{cash}" property="text"/>
+		<mx:CurrencyValidator id="bankValidator" alignSymbol="right" allowNegative="false" minValue="0.01" maxValue="100000000" 
+							  required="true" precision="2" source="{bank}" property="text"/>
+		<mx:CurrencyValidator id="couponValidator" alignSymbol="right" allowNegative="false" minValue="0.01" maxValue="100000000" 
+							  required="true" precision="2" source="{couponPay}" property="text"/>
+		<mx:NumberValidator id="couponNumValidator" required="true"  minValue="1" maxValue="100" precision="0"
+							source="{couponNum}" property="text"/>
+		<consume:MixConsistantValidator id="couponConsistantValidator"   source="{couponNum}" property="text" required="false"
+										partner="{couponPay}" partnerProperty="text" inconsistantError="优惠券支付信息填写不完整"/>
+		
+		
+		<mx:CurrencyValidator id="otherValidator" alignSymbol="right" allowNegative="false" minValue="0.01" maxValue="100000000" 
+							  required="true" precision="2" source="{otherPay}" property="text"/>
+		<mx:RegExpValidator id="otherTypeValidator" required="true" expression="^[\u4e00-\u9fa5\\w]*" source="{otherType}" property="text"/>
+		<consume:MixConsistantValidator id="otherConsistantValidator"   source="{otherType}" property="text" required="false"
+										partner="{otherPay}" partnerProperty="text" inconsistantError="其他支付信息填写不完整"/>
+		<mx:StringValidator id="freeValidator" minLength="1" maxLength="200" required="true" source="{freeReason}" property="text"/>
+	</fx:Declarations>
+	<c:states>
+		<s:State name="cash"/>
+		<s:State name="bank"/>
+		<s:State name="coupon"/>
+		<s:State name="other"/>
+		<s:State name="mix"/>
+		<s:State name="free" />
+	</c:states>
+	
+	<s:Group height="100%" horizontalCenter="0">
+		<s:VGroup>
+			<s:Label text="结帐"  fontSize="16" fontWeight="bold" width="100%" textAlign="center" />
 			<s:VGroup>
 				<s:Label text="商品清单："/>
-				<mx:DataGrid id="purchasedProducts">
+				<mx:DataGrid id="purchased" textAlign="center" width="600">
 					<mx:columns>
-						<mx:DataGridColumn headerText="商品"/>
-						<mx:DataGridColumn headerText="价格（元）"/>
-						<mx:DataGridColumn headerText="数量"/>
+						<mx:DataGridColumn headerText="商品" dataField="商品"/>
+						<mx:DataGridColumn headerText="价格（元）" dataField="价格"/>
+						<mx:DataGridColumn headerText="数量" dataField="数量"/>
 					</mx:columns>
 				</mx:DataGrid>
-				<s:Label id="sum" text="合计："/>
+				<s:HGroup verticalAlign="middle">
+					<s:Label text="合计："/><s:Label id="sum"/><s:Label text="元"/>
+				</s:HGroup>
 			</s:VGroup>
-			<s:HGroup>
-				<s:Label text="联系人："/><s:Label text="联系电话："/>
-			</s:HGroup>
-			<s:HGroup>
-				<s:Label text="配送位置："/>
-			</s:HGroup>
+			<mx:Grid verticalAlign="middle">
+				<mx:GridRow verticalAlign="middle">
+					<mx:GridItem>
+						<s:Label text="联系人："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:TextInput id="customerName" />
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle">
+					<mx:GridItem>
+						<s:Label text="联系电话："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:TextInput id="telephone"/>
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle">
+					<mx:GridItem>
+						<s:Label text="配送位置："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:TextInput id="site" width="400"/>
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle">
+					<mx:GridItem>
+						<s:Label text="支付方式："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:DropDownList id="payWay" requireSelection="true" labelField="label" change="changeState(event)" >
+							<s:ArrayCollection>
+								<fx:Object payType="cash" label="现金"/>
+								<fx:Object payType="bank" label="银行卡"/>
+								<fx:Object payType="coupon" label="代金券"/>
+								<fx:Object payType="other" label="其他"/>
+								<fx:Object payType="free" label="免单"/>
+								<fx:Object payType="mix" label="混合"/>
+							</s:ArrayCollection>
+						</s:DropDownList>
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle" includeIn="bank,mix">
+					<mx:GridItem>
+						<s:Label text="银行卡支付(元)："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:TextInput id="bank"/>
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle" includeIn="coupon,mix">
+					<mx:GridItem>
+						<s:Label text="代金券支付(元)："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:TextInput id="couponPay" /><s:Label text="张数："/><s:TextInput id="couponNum" width="30"/>
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle" includeIn="other,mix">
+					<mx:GridItem>
+						<s:Label text="其他支付(元)："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:TextInput id="otherPay" />
+						<s:Label text="类型："/>
+						<s:TextInput id="otherType" width="30"/>
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle" includeIn="free">
+					<mx:GridItem>
+						<s:Label text="免单说明："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:TextInput id="freeReason" />
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle" includeIn="cash,mix">
+					<mx:GridItem>
+						<s:Label text="现金支付(元)："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:TextInput id="cash" change="onCashChange()" /><s:Label text="找零(元)：" includeIn="cash"/><s:Label id="change" includeIn="cash"/>
+					</mx:GridItem>
+				</mx:GridRow>
+			</mx:Grid>
+			<s:Label color="red" id="msg" paddingTop="3"/>
 		</s:VGroup>
 		<s:Group bottom="2" width="100%">
-			<s:Button id="back" label="返回" left="2"/>
-			<s:HGroup horizontalAlign="right" right="2">
-				<s:Button label="结帐"/>
-				<s:Button label="结帐并打印"/>
-				<s:Button label="放弃"/>
-			</s:HGroup>
+			<s:Button label="返回" left="2" click="back()"/>
+			<s:Button label="结帐并打印" click="checkoutAndPrint()" right="200" />
+			<s:Button label="放弃" click="cancel()" right="2"/>
 		</s:Group>
-	</s:Panel>	
+	</s:Group>
 </c:AbstractInnerModule>

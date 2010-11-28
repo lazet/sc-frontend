@@ -81,10 +81,10 @@
 				//验证
 				bv.minDate = this.today;
 				ev.minDate = (begin.text == "")?this.today:begin.text;
-				
+				var results:Array = null;
 				if(this.currentState == "specPrice"){
 					//验证
-					var results:Array = Validator.validateAll([pv,mv,dv,bv,ev,tv]);
+					results = Validator.validateAll([pv,mv,dv,bv,ev,tv]);
 					if(results.length > 0){
 						return false;
 					}
@@ -95,14 +95,14 @@
 				}
 				else if(this.currentState == "categoryDiscount"){
 					//验证
-					var results:Array = Validator.validateAll([pcv,dv,bv,ev,tv]);
+					results = Validator.validateAll([pcv,dv,bv,ev,tv]);
 					if(results.length > 0){
 						return false;
 					}
 				}
 				else{
 					//验证
-					var results:Array = Validator.validateAll([dv,bv,ev,tv]);
+					results = Validator.validateAll([dv,bv,ev,tv]);
 					if(results.length > 0){
 						return false;
 					}

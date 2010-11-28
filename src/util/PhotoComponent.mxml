@@ -51,7 +51,7 @@
 				}
 				return this.picB64Data;
 			}
-			var fileReference:FileReference
+			protected var fileReference:FileReference
 			protected function upload(evt:MouseEvent):void {
 				fileReference = new FileReference();
 				fileReference.addEventListener(Event.SELECT,function(evt:Event):void{					

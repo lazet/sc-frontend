@@ -37,12 +37,13 @@
 			protected var defs:Array;
 			[Bindable]
 			protected var pageFrom:int = 1;
+			[Bindable]
 			protected var size:int = 20;
 			[Bindable]
 			protected var total:int = 0;
 			protected var arg:* = {};
 			
-			var currentData:*;
+			protected var currentData:*;
 			
 			protected function onInit(event:FlexEvent):void{
 				//注册列表删除和编辑监听事件
@@ -67,6 +68,9 @@
 			public function prompt(e:KeyboardEvent):void{
 				if(e.keyCode == 13){
 					search();
+				}
+				else if(e.keyCode <= 40){
+					return;
 				}
 				else{
 					var sc:String = searchCondition.textInput.text;

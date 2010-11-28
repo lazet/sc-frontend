@@ -22,13 +22,13 @@ package util
 		static public var ORDER_BY:String = "order";
 		static public var OBJ:String = "obj";
 		
-		//购买商品更新的发起方:消费页面发起的
-		static public var PURCHASED_REFRESH_FROM_CONSUME = "PURCHASED_REFRESH_FROM_CONSUME";
-		//购买商品更新的发起方:结帐页面发起的
-		static public var PURCHASED_REFRESH_FROM_CHECKOUT = "PURCHASED_REFRESH_FROM_CHECKOUT";
-		//购买商品更新的发起方:历史暂存页面发起的
-		static public var PURCHASED_REFRESH_FROM_SAVED = "PURCHASED_REFRESH_FROM_SAVED";
-		//购买商品更新的发起方:定时发起的
-		static public var PURCHASED_REFRESH_FROM_TIMER = "PURCHASED_REFRESH_FROM_TIMER";
+		//购买商品活动的发起方:消费页面发起的
+		static public var FROM_CONSUME:String = "FROM_CONSUME";
+		//购买商品活动的发起方:结帐页面发起的
+		static public var FROM_CHECKOUT:String = "FROM_CHECKOUT";
+		//购买商品活动的发起方:历史暂存页面发起的
+		static public var FROM_SAVED:String = "FROM_SAVED";
+		//购买商品活动的发起方:定时发起的
+		static public var FROM_TIMER:String = "FROM_TIMER";
 	}
 }

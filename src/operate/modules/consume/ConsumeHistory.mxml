@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:AbstractInnerModule xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:c="org.lcf.*"
+					   xmlns:mx="library://ns.adobe.com/flex/mx" layout="vertical" 
+					   width="100%" height="100%" horizontalGap="0"
+					   creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			include "../../../util/ScUtil.as";
+			
+			import com.adobe.serialization.json.JSON;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			import rpc.RpcService;
+			
+			import spark.components.DataGroup;
+			import spark.components.List;
+			
+			import util.Consts;
+			import util.EventTypeDefine;
+			import util.ObjectNameDefine;
+			
+			[Bindable]
+			public var total:int = 0;
+			[Bindable]
+			public var size:int = 20;
+			[Bindable]
+			public var pageFrom:int = 0;
+			//搜索条件
+			protected var arg:* = {};
+			
+			protected var today:String;
+			public var searchToday:Boolean = true;
+			
+			public function init():void{
+				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
+				searchCondition.addEventListener(KeyboardEvent.KEY_DOWN,prompt);
+
+				this.today = this.c.get(ObjectNameDefine.TODAY) as String;
+				search();
+			}
+			public function prompt(e:KeyboardEvent):void{
+				if(e.keyCode == 13){
+					search();
+				}
+				else if(e.keyCode <= 40){
+					return;
+				}
+				else{
+					var sc:String = searchCondition.textInput.text;
+					if(sc == "" || sc.indexOf(" ") >= 0){
+						return;
+					}
+					else{
+						var con:* = {"keywords":{ "$regex" : "^.*" + sc + ".*$" , "$options" : "i"}};
+						var pArg:* = {};
+						pArg[Consts.CONDITION] = JSON.encode(con);
+						this.c.dispatch(new RpcEvent("consumeRecord/searchkeywords",pArg));
+					}
+				}
+				
+			}
+			override public function  get preferEventListeners():Array
+			{
+				var records:EventListenerModel = new EventListenerModel("consumeRecord.findByPage",onRecordsFindByPage);
+				var consumeRecordSearchKeyworsSuccess:EventListenerModel = new EventListenerModel("consumeRecord.searchkeywords.success",onSearchKeywords);
+				var saveSuccess:EventListenerModel = new EventListenerModel(EventTypeDefine.PURCHASED_PRODUCT_SAVED,refreshCurrentPage);
+				return [records,consumeRecordSearchKeyworsSuccess];
+			}
+			
+			public function onRecordsFindByPage(e:GeneralBundleEvent):void{
+				this.total = e.bundle[Consts.TOTAL] as int;
+				if(this.total > this.pageFrom * this.size){
+					nextP.enabled = true;
+					nextP.setStyle("textDecoration","underline");
+				}
+				else{
+					nextP.enabled = false;
+					nextP.setStyle("textDecoration","none");
+				}
+				if(this.pageFrom > 1){
+					lastP.enabled = true;
+					lastP.setStyle("textDecoration","underline");
+				}
+				else{
+					lastP.enabled = false;
+					lastP.setStyle("textDecoration","none");
+				}
+				var defs:Array = e.bundle[Consts.DATASET] as Array;
+				var defCollection:ArrayCollection = new ArrayCollection(defs);
+				resultsDisplay.dataProvider = defCollection;
+			}
+			//当获得返回的关键字时
+			public function onSearchKeywords(e:GeneralBundleEvent):void{
+				var a:ArrayCollection = new ArrayCollection(e.bundle as Array);
+				a.filterFunction = function(item:Object):Boolean{
+					var pattern:RegExp = new RegExp("^.*"+ searchCondition.textInput.text + ".*$", "i");
+					return pattern.test(item as String);
+				};
+				a.refresh();
+				searchCondition.dataProvider = a;
+				searchCondition.openDropDown();
+			}
+			public function search():void{
+				this.pageFrom = 1;
+				//查询折扣，每页50
+				var pArg:Object = new Object();
+				pArg[Consts.COLLECTION] = "consumeRecord";
+				//解析查询字符串
+				var condition:Object = {};
+				var allKeywordsCondition:Object = {};
+				
+				var sc:String = searchCondition.textInput.text
+				var keywords:Array = sc.split(" ");
+				if(this.searchToday){
+					condition["createdTime"] = {"$gte":today};
+				}
+				//模糊查询
+				var indistinctKeywords:Array = new Array();
+				
+				for(var i:int = keywords.length -1 ; i >= 0; i--){
+					if((keywords[i] as String) == ""){
+						keywords.splice(i,1);
+						continue;
+					}
+					var pair:Array = (keywords[i] as String).split(":");
+					if(pair.length == 1){
+						if(keywords[i] as String != ""){
+							indistinctKeywords.push({ "$regex" : "^.*" + keywords[i] + ".*$" , "$options" : "i"});
+						}
+					}
+					if(pair.length == 2){
+						condition[pair[0]] = pair[1]; 
+					}
+				}
+				if(indistinctKeywords.length > 0){
+					allKeywordsCondition["$all"] = indistinctKeywords;
+					condition["keywords"] = allKeywordsCondition;
+				}
+				pArg[Consts.CONDITION] = JSON.encode(condition);
+				pArg[Consts.PAGE_FROM] = this.pageFrom;
+				pArg[Consts.PAGE_SIZE] = this.size;
+				pArg[Consts.ORDER_BY] = "{\"createdTime\":-1}";
+				this.arg = pArg;
+				this.c.dispatch(new RpcEvent("data/findByPage",pArg));
+			}
+			public function refreshCurrentPage(e:GeneralBundleEvent):void{
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function lastPage():void{
+				if(this.pageFrom <= 1) return;
+				this.pageFrom --;
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function nextPage():void{
+				if(this.total <= this.pageFrom * this.size) return;
+				this.pageFrom ++;
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function detailShow(item:Object, column:DataGridColumn):String{
+				var detail:String = "";
+				var pl:Array = item["商品列表"] as Array;
+				for(var i:int= 0; i < pl.length; i++){
+					detail = detail + pl[i]["商品"] + ':' + pl[i]["数量"] + ' ';
+				}
+				return abbreviate(detail,20);
+			}
+		]]>
+	</fx:Script>
+	<s:HGroup verticalAlign="middle" width="720" gap="10" paddingTop="3">
+		<s:Label paddingLeft="120" text=""/> 
+		<s:ComboBox id="searchCondition" width="300" fontSize="16" />
+		<s:Button label="搜索今天" click="this.searchToday = true;search()"/>
+		<s:Button label="搜索全部" click="this.searchToday = false;search()"/>
+		<mx:Spacer width="100%"/>
+	</s:HGroup>
+	
+	<mx:DataGrid id="resultsDisplay" width="100%" height="100%" textAlign="center">
+		<mx:columns>
+			<mx:DataGridColumn headerText="单据号" dataField="id"/>
+			<mx:DataGridColumn headerText="时间" dataField="createdTime"/>
+			<mx:DataGridColumn headerText="金额" dataField="消费总金额"/>
+			<mx:DataGridColumn headerText="商品信息" dataField="keywords" labelFunction="detailShow"/>
+			<mx:DataGridColumn headerText="支付方式" dataField="支付方式"/>
+			<mx:DataGridColumn headerText="联系人" dataField="联系人"/>
+			<mx:DataGridColumn headerText="联系电话" dataField="联系电话"/>
+			<mx:DataGridColumn headerText="配送位置" dataField="配送位置"/>
+			<mx:DataGridColumn headerText="操作员" dataField="creator"/>
+		</mx:columns>
+	</mx:DataGrid>	
+	<s:HGroup  width="600" verticalAlign="top">
+		<s:Label text="共计\{{total}\}笔交易" paddingLeft="125"/>
+		<mx:Spacer width="100%"/>
+		<s:Label text="共{Math.ceil(total*1.0/size)}页 " paddingLeft="125"/>
+		<s:Label id = "lastP" text="上一页" toolTip="上一页" click="lastPage()" enabled="false"/>
+		<s:Label id="currentPageBottom" text="{pageFrom}"/>
+		<s:Label id = "nextP" text="下一页" toolTip="下一页" textDecoration="underline"  click="nextPage()" enabled="false"/>	
+	</s:HGroup>
+</c:AbstractInnerModule>

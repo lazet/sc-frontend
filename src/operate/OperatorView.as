@@ -129,7 +129,7 @@ package operate
 			else if (instance == this.toolBar){
 				this.toolBar.requireSelection= true;
 				this.toolBar.labelField = "name";
-				this.toolBar.dataProvider = new ArrayCollection([{"url":"operate/consume/ConsumePage.swf","name":"下单"},{"url":"operate/consume/consumeHistory.swf","name":"历史订单"}]);
+				this.toolBar.dataProvider = new ArrayCollection([{"url":"operate/modules/consume/ConsumePage.swf","name":"下单"},{"url":"operate/modules/consume/ConsumeHistory.swf","name":"历史订单"}]);
 				this.toolBar.addEventListener(IndexChangeEvent.CHANGE,onSwitchContent);
 			}
 			else if (instance == this.switchView){

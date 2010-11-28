@@ -28,9 +28,9 @@
 			import util.RemoteDate;
 			
 			//是不是初始化完毕
-			var inited:Boolean = false;
+			protected var inited:Boolean = false;
 			//商品信息字典
-			var pMap:Dictionary = new Dictionary();
+			protected var pMap:Dictionary = new Dictionary();
 			
 			public function init():void{
 				purchased.removeEventListener(EventTypeDefine.CONSUME_ADJUST_PRODUCT_EVENT,onAdjustProduct);
@@ -119,11 +119,11 @@
 				}
 				var sum:Number = 0;
 				//刷新已购商品列表
-				for(var i:int = 0; i< purchasedProducts.length;i++){
-					var product:* = purchasedProducts.getItemAt(i);
-					var p:* = pMap[product["商品"]];
-					product["价格"] = ((p["特价"])/100.00).toFixed(2);
-					sum = sum + ((p["特价"]) * product["数量"]/100.00);
+				for(var k:int = 0; k< purchasedProducts.length;k++){
+					var product:* = purchasedProducts.getItemAt(k);
+					var pi:* = pMap[product["商品"]];
+					product["价格"] = ((pi["特价"])/100.00).toFixed(2);
+					sum = sum + ((pi["特价"]) * product["数量"]/100.00);
 				}
 				total = sum;
 				//刷新总价格
@@ -139,7 +139,15 @@
 				var product:EventListenerModel = new EventListenerModel("product.findAll",onProductFindAll);
 				var discount:EventListenerModel = new EventListenerModel("discount.findAll",onDiscountFindAll);
 				var buyProduct:EventListenerModel = new EventListenerModel(EventTypeDefine.CONSUME_BUY_PRODUCT_EVENT,onBuyProduct);
-				return [productDefine,product,discount,buyProduct ];
+				var cancel:EventListenerModel = new EventListenerModel(EventTypeDefine.PURCHASED_PRODUCT_CANCEL,onPurchaseCancel);
+				var saved:EventListenerModel = new EventListenerModel(EventTypeDefine.PURCHASED_PRODUCT_SAVED,onPurchaseCancel);
+				return [productDefine,product,discount,buyProduct,cancel,saved ];
+			}
+			public function onPurchaseCancel(e:GeneralBundleEvent):void{
+				this.purchasedProducts.removeAll();
+				this.total = 0;
+				this.c.remove(ObjectNameDefine.PURCHASED_PRODUCTS);
+				this.c.remove(ObjectNameDefine.PURCHASED_SUM);
 			}
 			/**
 			 * 购买某种商品
@@ -268,7 +276,7 @@
 				
 			}
 			protected function onExit(e:CloseEvent):void{
-				if(e.detail == Alert.OK){//this.c.dispatch(new ModuleEvent(Constants.CLOSE_MODULE_EVENT,"operate/modules/consume/ConsumePage.swf"));
+				if(e.detail == Alert.OK){
 					this.purchasedProducts.removeAll();
 					this.total = 0;
 				}
@@ -278,9 +286,9 @@
 					//把数据放在容器中，然后通知交易数据更新，这样做比较健壮，适合事件加载和懒加载
 					this.c.put(ObjectNameDefine.PURCHASED_PRODUCTS, purchasedProducts);
 					this.c.put(ObjectNameDefine.PURCHASED_SUM, total);
-					this.c.dispatch(new GeneralBundleEvent(EventTypeDefine.PURCHASED_PRODUCT_REFRESH,Consts.PURCHASED_REFRESH_FROM_CONSUME));
+					this.c.dispatch(new GeneralBundleEvent(EventTypeDefine.PURCHASED_PRODUCT_REFRESH,Consts.FROM_CONSUME));
 					//打开结帐页面
-					this.c.dispatch(new ModuleEvent(Constants.OPEN_MODULE_EVENT,"operate/modules/consume/CheckoutPage.swf"));
+					this.c.dispatch(new ModuleEvent(Constants.OPEN_MODULE_EVENT,"operate/modules/consume/CheckoutPage.swf","结帐","operate/modules/consume/CheckoutPage.swf"));
 				}
 			}
 		]]>
