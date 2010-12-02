@@ -7,7 +7,7 @@
 	<fx:Metadata>
 		[HostComponent("operate.OperatorView")]
 	</fx:Metadata>
-	
+	<s:Group id="printContent" x="0" y="0" width="0" height="0"/>
 	<s:Group top="1" bottom="1" left="1" right="1">
 		<s:layout>
 			<s:VerticalLayout gap="0"/>

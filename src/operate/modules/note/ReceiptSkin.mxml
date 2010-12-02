@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:note="operate.modules.note.*">
+	<!-- host component -->
+	<fx:Script>
+		<![CDATA[
+			public function printRendererFunction(item:Object):IFactory{
+				var clazz:Class;
+				if(item instanceof Array){
+					var columns:Array = item as Array;
+					if(columns.length == 2){
+						clazz = TwoColumnRenderer;
+					}
+					else if(columns.length == 3){
+						clazz = ThreeColumnRenderer;
+					}
+					else if(columns.length == 4){
+						clazz = FourColumnRenderer;
+					}
+					else{
+						clazz = OneColumnRenderer;
+					}
+				}
+				else if( item == null){
+					clazz = DashesLineRenderer;
+				}
+				else{
+					clazz = OneColumnRenderer;
+				}
+				return new ClassFactory( clazz );
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[HostComponent("operate.modules.note.Receipt")]
+	</fx:Metadata>
+	<s:VGroup gap="1" width="216"  horizontalAlign="left" contentBackgroundColor="white" fontFamily="宋体" color="#000000" fontSize="9">
+		<s:HGroup paddingBottom="2" paddingTop="2" horizontalAlign="center" width="100%">
+			<s:Label id="headerTitle" textAlign="center" color="#000000" fontFamily="宋体" fontWeight="bold" height="20" fontSize="11"  width="100%"/>	
+		</s:HGroup>
+		<note:DashesLine width="100%"/>
+		<s:DataGroup id="contentDisplay" width="100%" itemRendererFunction="printRendererFunction">
+			<s:layout>
+				<s:VerticalLayout gap="2"/>
+			</s:layout>
+		</s:DataGroup>	
+		<s:HGroup paddingBottom="2" paddingTop="1" horizontalAlign="center" width="100%">
+			<s:Label id ="bottomInfo"/>	
+		</s:HGroup>
+	</s:VGroup>
+
+</s:Skin>

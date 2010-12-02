@@ -14,18 +14,20 @@
   </compiler>
   <applications>
     <application path="Main.mxml"/>
+    <application path="ReceiptTest.mxml"/>
   </applications>
   <modules>
-    <module application="src/Main.mxml" destPath="manage/modules/resource/Resources.swf" optimize="true" sourcePath="src/manage/modules/resource/Resources.mxml"/>
-    <module application="src/Main.mxml" destPath="operate/modules/consume/ConsumeHistory.swf" optimize="true" sourcePath="src/operate/modules/consume/ConsumeHistory.mxml"/>
-    <module application="src/Main.mxml" destPath="manage/modules/main/MainPage.swf" optimize="true" sourcePath="src/manage/modules/main/MainPage.mxml"/>
     <module application="src/Main.mxml" destPath="operate/modules/consume/CheckoutPage.swf" optimize="true" sourcePath="src/operate/modules/consume/CheckoutPage.mxml"/>
     <module application="src/Main.mxml" destPath="manage/modules/marketing/Marketings.swf" optimize="true" sourcePath="src/manage/modules/marketing/Marketings.mxml"/>
-    <module application="src/Main.mxml" destPath="manage/modules/product/Products.swf" optimize="true" sourcePath="src/manage/modules/product/Products.mxml"/>
-    <module application="src/Main.mxml" destPath="operate/modules/consume/ConsumePage.swf" optimize="true" sourcePath="src/operate/modules/consume/ConsumePage.mxml"/>
+    <module application="src/Main.mxml" destPath="operate/modules/consume/ConsumeHistory.swf" optimize="true" sourcePath="src/operate/modules/consume/ConsumeHistory.mxml"/>
     <module application="src/Main.mxml" destPath="manage/modules/marketing/MarketingsMainPage.swf" optimize="true" sourcePath="src/manage/modules/marketing/MarketingsMainPage.mxml"/>
-    <module application="src/Main.mxml" destPath="manage/modules/resource/ResourcesMainPage.swf" optimize="true" sourcePath="src/manage/modules/resource/ResourcesMainPage.mxml"/>
     <module application="src/Main.mxml" destPath="manage/modules/marketing/discount/Discounts.swf" optimize="true" sourcePath="src/manage/modules/marketing/discount/Discounts.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/product/Products.swf" optimize="true" sourcePath="src/manage/modules/product/Products.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/user/Users.swf" optimize="true" sourcePath="src/manage/modules/user/Users.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/resource/Resources.swf" optimize="true" sourcePath="src/manage/modules/resource/Resources.mxml"/>
+    <module application="src/Main.mxml" destPath="operate/modules/consume/ConsumePage.swf" optimize="true" sourcePath="src/operate/modules/consume/ConsumePage.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/resource/ResourcesMainPage.swf" optimize="true" sourcePath="src/manage/modules/resource/ResourcesMainPage.mxml"/>
+    <module application="src/Main.mxml" destPath="manage/modules/main/MainPage.swf" optimize="true" sourcePath="src/manage/modules/main/MainPage.mxml"/>
   </modules>
   <buildCSSFiles/>
 </actionScriptProperties>

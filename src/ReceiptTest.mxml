@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600"
+			   creationComplete="application1_creationCompleteHandler(event)">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import operate.modules.note.Receipt;
+
+			protected function application1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var  content:Array = [["卡好：",'1103345'],["流水号：",'2343412412'],null,['西红柿鸡蛋饭',1, 25.00],['大陆饭',2,33.02],null,['','合计:',58],null,'欢迎下次光临']
+				var r:Receipt = new Receipt("午餐削皮",content,"傻瓜体统");
+				this.addElement(r);
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	
+</s:Application>

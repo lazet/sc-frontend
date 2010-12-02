@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:AbstractInnerModule xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   xmlns:c="org.lcf.*"
+					   layout="absolute" width="100%" height="100%">
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			import rpc.RpcService;
+			
+			import spark.components.DataGroup;
+			import spark.components.List;
+			
+			import util.Consts;
+			import util.EventTypeDefine;
+			import util.ObjectNameDefine;
+			
+			protected var defs:Array;
+			[Bindable]
+			protected var pageFrom:int = 1;
+			[Bindable]
+			protected var size:int = 20;
+			[Bindable]
+			protected var total:int = 0;
+			protected var arg:* = {};
+			
+			protected var currentData:*;
+			public function refreshCurrentPage(e:GeneralBundleEvent):void{
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function lastPage():void{
+				if(this.pageFrom <= 1) return;
+				this.pageFrom --;
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+			public function nextPage():void{
+				if(this.total <= this.pageFrom * this.size) return;
+				this.pageFrom ++;
+				this.arg[Consts.PAGE_FROM] = this.pageFrom;
+				this.c.dispatch(new RpcEvent("data/findByPage",arg));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:VGroup  width="100%" height="100%" >
+		<s:HGroup verticalAlign="middle" width="600" gap="10">
+			<s:Label paddingLeft="120" text=""/> 
+			<s:ComboBox id="searchCondition" width="300" fontSize="16" />
+			<s:Button label="搜索" />
+			<mx:Spacer width="100%"/>
+			<s:Button label="添加用户"/>
+		</s:HGroup>
+		
+		<mx:DataGrid id="usersDisplay" width="100%" height="100%" textAlign="center"/>
+		<s:HGroup  width="600" verticalAlign="top">
+			<s:Label text="共计\{{total}\}位用户" paddingLeft="125"/>
+			<mx:Spacer width="100%"/>
+			<s:Label text="共{Math.ceil(total*1.0/size)}页 " paddingLeft="125"/>
+			<s:Label id = "lastP" text="上一页" toolTip="上一页" click="lastPage()" enabled="false"/>
+			<s:Label id="currentPageBottom" text="{pageFrom}"/>
+			<s:Label id = "nextP" text="下一页" toolTip="下一页" textDecoration="underline"  click="nextPage()" enabled="false"/>	
+		</s:HGroup>
+		
+	</s:VGroup>
+</c:AbstractInnerModule>

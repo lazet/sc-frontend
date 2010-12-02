@@ -22,5 +22,7 @@ package util
 		static public var PURCHASED_PRODUCT_REFRESH:String = "PURCHASED_PRODUCT_REFRESH";
 		static public var PURCHASED_PRODUCT_CANCEL:String = "PURCHASED_PRODUCT_CANCEL";
 		static public var PURCHASED_PRODUCT_SAVED:String = "PURCHASED_PRODUCT_SAVED";
+		
+		static public var PRINT:String = "PRINT";
 	}
 }

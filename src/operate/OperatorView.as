@@ -10,6 +10,9 @@ package operate
 	import mx.controls.LinkButton;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
+	import mx.printing.FlexPrintJob;
+	
+	import operate.modules.note.Receipt;
 	
 	import org.lcf.AbstractInnerModule;
 	import org.lcf.Constants;
@@ -29,6 +32,7 @@ package operate
 	import spark.components.Button;
 	import spark.components.ButtonBar;
 	import spark.components.DropDownList;
+	import spark.components.Group;
 	import spark.components.Label;
 	import spark.components.PopUpAnchor;
 	import spark.components.supportClasses.SkinnableComponent;
@@ -58,6 +62,9 @@ package operate
 		[SkinPart(required="true")]
 		public var currentTime:Label;
 		
+		[SkinPart(required="true")]
+		public var printContent:Group;
+		
 		public var mySettings:MySettings;
 		
 		protected var c:IContainer;
@@ -69,13 +76,32 @@ package operate
 		public function get preferEventListeners():Array
 		{
 			var minute:EventListenerModel = new EventListenerModel(EventTypeDefine.TIME_MINUTE_EVENT,onMinute);
-			return [minute ];
+			var print:EventListenerModel = new EventListenerModel(EventTypeDefine.PRINT,onPrint);
+			return [minute,print ];
 		}
 		protected function onMinute(e:GeneralBundleEvent):void{
 			if(this.currentTime != null)
 				this.currentTime.text = "当前时间：" + (e.bundle as String).substr(0,16);
 		}
-
+		protected function onPrint(e:GeneralBundleEvent):void{
+			var r:Receipt = e.bundle as Receipt;
+			if(this.printContent != null){
+				this.printContent.removeAllElements();
+				this.printContent.addElement(r);
+				var printJob:FlexPrintJob = new FlexPrintJob();
+				printJob.printAsBitmap = true;
+				var printerReader:Boolean = printJob.start();
+				if(printerReader){
+					r.width = printJob.pageWidth;
+					r.height = printJob.pageHeight;
+					for(var i:int=0;i< r.number; i++){
+						printJob.addObject(r);
+					}
+					printJob.send();
+				}
+				
+			}
+		}
 		public function OperatorView()
 		{
 			super();
@@ -146,6 +172,10 @@ package operate
 				this.content.container.put(RpcService.RPC_SERVICE, rpcClient);
 				
 				this.content.open("operate/modules/consume/ConsumePage.swf","下单","operate/modules/consume/ConsumePage.swf");
+			}
+			else if( instance == this.printContent){
+				//增加对打印的支持
+				
 			}
 		}
 		override protected function partRemoved(partName:String, instance:Object):void{
