@@ -84,22 +84,34 @@ package operate
 				this.currentTime.text = "当前时间：" + (e.bundle as String).substr(0,16);
 		}
 		protected function onPrint(e:GeneralBundleEvent):void{
-			var r:Receipt = e.bundle as Receipt;
-			if(this.printContent != null){
-				this.printContent.removeAllElements();
+			this.printContent.removeAllElements();
+			if(e.bundle instanceof Array){
+				var rs:Array = e.bundle as Array;
+				for(var i:int = 0; i < rs.length; i++){
+					var r:Receipt = rs[i] as Receipt;
+					this.printContent.addElement(r);
+				}
+			}
+			else if(e.bundle instanceof Receipt){
+				var r:Receipt = e.bundle as Receipt;
 				this.printContent.addElement(r);
+			}
+			
+			if(this.printContent != null){
 				var printJob:FlexPrintJob = new FlexPrintJob();
 				printJob.printAsBitmap = true;
 				var printerReader:Boolean = printJob.start();
 				if(printerReader){
-					r.width = printJob.pageWidth;
-					r.height = printJob.pageHeight;
-					for(var i:int=0;i< r.number; i++){
-						printJob.addObject(r);
+					for(var k:int; k < this.printContent.numElements;k++){
+						var receipt:Receipt = this.printContent.getElementAt(k) as Receipt;
+						receipt.width = printJob.pageWidth;
+						receipt.height = printJob.pageHeight;
+						for(var i:int=0;i< receipt.number; i++){
+							printJob.addObject(r);
+						}
 					}
 					printJob.send();
 				}
-				
 			}
 		}
 		public function OperatorView()

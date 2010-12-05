@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  focusEnabled="true" top="0" left="0" right="0" bottom="0">
+
+	<fx:Script>
+		<![CDATA[
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import util.EventTypeDefine;
+			
+			protected function delete_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.USER_DELETE_EVENT,this.data));
+			}
+			protected function edit_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.USER_EDIT_EVENT,this.data));
+			}
+			protected function lock_clickHandler(event:MouseEvent):void
+			{
+				if(this.data['status']== '正常')
+					this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.USER_LOCK_EVENT,this.data));
+				else
+					this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.USER_LOCK_EVENT,this.data));
+			}
+		]]>
+	</fx:Script>
+	
+	<s:HGroup gap="5" horizontalCenter="0">
+		<mx:LinkButton label="{this.data['status']== '正常'?'锁定':'解锁'}" click="lock_clickHandler(event)"/>
+		<mx:LinkButton label="编辑" click="edit_clickHandler(event)"/>
+		<mx:LinkButton label="删除" click="delete_clickHandler(event)"/>
+	</s:HGroup>
+</s:MXDataGridItemRenderer>

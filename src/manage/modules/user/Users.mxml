@@ -3,7 +3,7 @@
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx" 
 					   xmlns:c="org.lcf.*"
-					   layout="absolute" width="100%" height="100%">
+					   layout="absolute" width="100%" height="100%" creationComplete="onInit()" xmlns:user="manage.modules.user.*">
 	<fx:Script>
 		<![CDATA[
 			import com.adobe.serialization.json.JSON;
@@ -40,6 +40,165 @@
 			protected var arg:* = {};
 			
 			protected var currentData:*;
+			
+			protected function onInit(event:FlexEvent = null):void{
+				//注册列表删除和编辑监听事件
+				usersDisplay.addEventListener(EventTypeDefine.USER_DELETE_EVENT,onDelete);
+				usersDisplay.addEventListener(EventTypeDefine.USER_EDIT_EVENT,onEdit);
+				//锁定和解锁都是调用这个事件处理，区别：当调用锁定时，事件参数类型不同
+				usersDisplay.addEventListener(EventTypeDefine.USER_LOCK_EVENT,onLock);
+				usersDisplay.addEventListener(EventTypeDefine.USER_UNLOCK_EVENT,onLock);
+				searchCondition.addEventListener(FocusEvent.FOCUS_IN,function():void{IME.enabled = true});
+				searchCondition.textInput.addEventListener(KeyboardEvent.KEY_DOWN,prompt);
+				//获取角色列表 
+				var arg:Object = new Object();
+				arg[Consts.COLLECTION] = "role";
+				arg[Consts.CONDITION] = "{}";
+				arg[Consts.ORDER_BY] = "{\"roleName\":1}";
+				this.c.dispatch(new RpcEvent("data/findAll",arg));
+				
+				search();
+			}
+			public function onDelete(e:GeneralBundleEvent):void{
+				this.currentData = e.bundle;
+				Alert.show("确定要删除用户" +e.bundle["loginName"] + "吗？","系统提示",Alert.OK | Alert.CANCEL,this,toDelete,null,Alert.CANCEL);
+			}
+			public function toDelete(e:CloseEvent):void{
+				if(e.detail == Alert.OK){
+					var pArg:Object = new Object();
+					pArg[Consts.COLLECTION] = "user";
+					pArg[Consts.CONDITION] = JSON.encode({"loginName":this.currentData["loginName"]});
+					this.c.dispatch(new RpcEvent("data/delete",pArg));
+				}				
+			}
+			public function onEdit(e:GeneralBundleEvent):void{
+				var pa:UserUpdate = new UserUpdate();
+				this.c.put("user.update.data",e.bundle);
+				this.c.put("user.update",pa);
+				//获得应用主窗口，做为父窗口
+				PopUpManager.addPopUp(pa,this,true);
+				PopUpManager.bringToFront(pa);
+			}
+			public function onLock(e:GeneralBundleEvent):void{
+				this.currentData = e.bundle;
+				var pArg:Object = new Object();
+				pArg[Consts.COLLECTION] = "user";
+				pArg[Consts.OBJ] = JSON.encode({"$set":{"status":this.currentData["status"]=="正常"?"锁定":"正常"}});
+				pArg[Consts.CONDITION] = JSON.encode({"loginName":this.currentData["loginName"]});
+				this.c.dispatch(new RpcEvent("data/update",pArg));
+			}
+
+			override public function  get preferEventListeners():Array
+			{
+				var users:EventListenerModel = new EventListenerModel("user.findByPage",onUsersFindByPage);
+				var userAddSuccess:EventListenerModel = new EventListenerModel("addUser.success",refreshCurrentPage);
+				var userUpdateSuccess:EventListenerModel = new EventListenerModel("updateUser.success",refreshCurrentPage);
+				var userLockSuccess:EventListenerModel = new EventListenerModel("user.update",refreshCurrentPage);
+				var userDeleteSuccess:EventListenerModel = new EventListenerModel("user.delete",refreshCurrentPage);
+				var userSearchKeyworsSuccess:EventListenerModel = new EventListenerModel("user.searchkeywords.success",onSearchKeywords);
+				return [users,userAddSuccess,userUpdateSuccess,userLockSuccess,userDeleteSuccess,userSearchKeyworsSuccess];
+			}
+			public function onUsersFindByPage(e:GeneralBundleEvent):void{
+				this.total = e.bundle[Consts.TOTAL] as int;
+				if(this.total > this.pageFrom * this.size){
+					nextP.enabled = true;
+					nextP.setStyle("textDecoration","underline");
+				}
+				else{
+					nextP.enabled = false;
+					nextP.setStyle("textDecoration","none");
+				}
+				if(this.pageFrom > 1){
+					lastP.enabled = true;
+					lastP.setStyle("textDecoration","underline");
+				}
+				else{
+					lastP.enabled = false;
+					lastP.setStyle("textDecoration","none");
+				}
+				var defs:Array = e.bundle[Consts.DATASET] as Array;
+				var defCollection:ArrayCollection = new ArrayCollection(defs);
+				usersDisplay.dataProvider = defCollection;
+			}
+			public function prompt(e:KeyboardEvent):void{
+				if(e.keyCode == 13){
+					search();
+				}
+				else if(e.keyCode <= 40){
+					return;
+				}
+				else{
+					var sc:String = searchCondition.textInput.text;
+					if(sc == "" || sc.indexOf(" ") >= 0){
+						return;
+					}
+					else{
+						var con:* = {"keywords":{ "$regex" : "^.*" + sc + ".*$" , "$options" : "i"}};
+						var pArg:* = {};
+						pArg[Consts.CONDITION] = JSON.encode(con);
+						this.c.dispatch(new RpcEvent("user/searchkeywords",pArg));
+					}
+				}
+				
+			}
+			//当获得返回的关键字时
+			public function onSearchKeywords(e:GeneralBundleEvent):void{
+				var a:ArrayCollection = new ArrayCollection(e.bundle as Array);
+				a.filterFunction = function(item:Object):Boolean{
+					var pattern:RegExp = new RegExp("^.*"+ searchCondition.textInput.text + ".*$", "i");
+					return pattern.test(item as String);
+				};
+				a.refresh();
+				searchCondition.dataProvider = a;
+				searchCondition.openDropDown();
+			}
+			public function search():void{
+				this.pageFrom = 1;
+				//查询商品，每页50
+				var pArg:Object = new Object();
+				pArg[Consts.COLLECTION] = "user";
+				//解析查询字符串
+				var condition:Object = {};
+				var allKeywordsCondition:Object = {};
+				
+				var sc:String = searchCondition.textInput.text
+				var keywords:Array = sc.split(" ");
+				//模糊查询
+				var indistinctKeywords:Array = new Array();
+				
+				for(var i:int = keywords.length -1 ; i >= 0; i--){
+					if((keywords[i] as String) == ""){
+						keywords.splice(i,1);
+						continue;
+					}
+					var pair:Array = (keywords[i] as String).split(":");
+					if(pair.length == 1){
+						if(keywords[i] as String != ""){
+							indistinctKeywords.push({ "$regex" : "^.*" + keywords[i] + ".*$" , "$options" : "i"});
+						}
+					}
+					if(pair.length == 2){
+						condition[pair[0]] = pair[1]; 
+					}
+				}
+				if(indistinctKeywords.length > 0){
+					allKeywordsCondition["$all"] = indistinctKeywords;
+					condition["keywords"] = allKeywordsCondition;
+				}
+				pArg[Consts.CONDITION] = JSON.encode(condition);
+				pArg[Consts.PAGE_FROM] = this.pageFrom;
+				pArg[Consts.PAGE_SIZE] = this.size;
+				pArg[Consts.ORDER_BY] = "{\"创建时间\":-1}";
+				this.arg = pArg;
+				this.c.dispatch(new RpcEvent("data/findByPage",pArg));
+			}
+			public function add():void{
+				var pa:UserAdd = new UserAdd();
+				this.c.put("user.add",pa);
+				//打开
+				PopUpManager.addPopUp(pa,this,true);
+				PopUpManager.bringToFront(pa);
+			}
 			public function refreshCurrentPage(e:GeneralBundleEvent):void{
 				this.arg[Consts.PAGE_FROM] = this.pageFrom;
 				this.c.dispatch(new RpcEvent("data/findByPage",arg));
@@ -63,15 +222,32 @@
 	</fx:Declarations>
 	
 	<s:VGroup  width="100%" height="100%" >
-		<s:HGroup verticalAlign="middle" width="600" gap="10">
-			<s:Label paddingLeft="120" text=""/> 
+		<s:HGroup verticalAlign="middle" width="600" gap="20">
+			<s:Label paddingLeft="120"/> 
 			<s:ComboBox id="searchCondition" width="300" fontSize="16" />
-			<s:Button label="搜索" />
-			<mx:Spacer width="100%"/>
-			<s:Button label="添加用户"/>
+			<s:Button label="搜索" click="search()" />
+			<s:Button label="添加用户" click="add()"/>
 		</s:HGroup>
 		
-		<mx:DataGrid id="usersDisplay" width="100%" height="100%" textAlign="center"/>
+		<mx:DataGrid id="usersDisplay" width="100%" height="100%" textAlign="center">
+			<mx:columns>
+				<mx:DataGridColumn headerText="用户名" dataField="loginName"/>
+				<mx:DataGridColumn headerText="真实姓名" dataField="trueName"/>
+				<mx:DataGridColumn headerText="角色" dataField="roles"/>
+				<mx:DataGridColumn headerText="手机" dataField="mobile"/>
+				<mx:DataGridColumn headerText="邮箱" dataField="email"/>
+				<mx:DataGridColumn headerText="添加时间" dataField="createdTime"/>
+				<mx:DataGridColumn headerText="状态" dataField="status"/>
+				<mx:DataGridColumn headerText="操作">
+					<mx:itemRenderer>
+						<fx:Component>
+							<user:UserOperateRenderer/>
+						</fx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>	
+			</mx:columns>
+		</mx:DataGrid>	
+		
 		<s:HGroup  width="600" verticalAlign="top">
 			<s:Label text="共计\{{total}\}位用户" paddingLeft="125"/>
 			<mx:Spacer width="100%"/>

@@ -24,5 +24,10 @@ package util
 		static public var PURCHASED_PRODUCT_SAVED:String = "PURCHASED_PRODUCT_SAVED";
 		
 		static public var PRINT:String = "PRINT";
+		
+		static public var USER_DELETE_EVENT:String = "USER_DELETE_EVENT";
+		static public var USER_EDIT_EVENT:String = "USER_EDIT_EVENT";
+		static public var USER_LOCK_EVENT:String = "USER_LOCK_EVENT";
+		static public var USER_UNLOCK_EVENT:String = "USER_UNLOCK_EVENT";
 	}
 }

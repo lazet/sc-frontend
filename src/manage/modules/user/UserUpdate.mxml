@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" title="用户信息更新"  creationComplete="init(event)" 
+		 implements="org.lcf.IEventPrefer" close="cancel()" xmlns:util="util.*" xmlns:product="manage.modules.user.*"
+		 resize="onResize()">
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import flash.system.IME;
+			
+			import json.JParser;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.FormItem;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.CurrencyValidator;
+			import mx.validators.CurrencyValidatorAlignSymbol;
+			import mx.validators.NumberValidator;
+			import mx.validators.NumberValidatorDomainType;
+			import mx.validators.RegExpValidator;
+			import mx.validators.StringValidator;
+			import mx.validators.Validator;
+			
+			import org.lcf.EventListenerModel;
+			import org.lcf.IContainer;
+			import org.lcf.IEventPrefer;
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import rpc.RpcEvent;
+			
+			import spark.components.ComboBox;
+			import spark.components.DropDownList;
+			import spark.components.TextInput;
+			import spark.events.IndexChangeEvent;
+			
+			import util.Consts;
+			import util.ObjectNameDefine;
+			import util.ProductCagegoryValidate;
+			import util.SelectOneValidate;
+			
+			//状态：初始:initial,提交中saving
+			protected var status:String = "initial";
+			
+			//容器
+			[Inject(name="container")]
+			public var c:IContainer;
+			
+			private var userInfo:Object;
+			
+			public function init(e:FlexEvent):void{
+				//获取数据
+				this.userInfo = this.c.get("user.update.data");
+				this.loginName.text = this.userInfo["loginName"];
+				this.email.text = this.userInfo["email"];
+				this.mobile.text = this.userInfo["mobile"];
+				this.trueName.text = this.userInfo["trueName"];
+				
+				//获取角色列表 
+				var arg:Object = new Object();
+				arg[Consts.COLLECTION] = "role";
+				arg[Consts.CONDITION] = "{}";
+				arg[Consts.ORDER_BY] = "{\"roleName\":1}";
+				this.c.dispatch(new RpcEvent("data/findAll",arg));
+			}
+			
+			
+			protected function save():Boolean{
+				
+				//禁止重复提交
+				if(status == "saving"){
+					Alert.show("正在保存中，请不要重复提交","保存提示");
+					return false;
+				}
+				//验证数据
+				var results:Array = Validator.validateAll([emailValidate,mobileValidate,trueNameValidate]);
+				if(results.length > 0){
+					return false;
+				}
+				//检查角色同时搜集数据
+				var rs:Array = new Array();
+				var existsRole:Boolean = false;
+				for(var i:int = 0; i < roles.dataProvider.length;i++){
+					var role:Object = roles.dataProvider.getItemAt(i);
+					if(role["selected"]){
+						existsRole = true;
+						rs.push(role["roleName"]);
+					}
+				}
+				if(!existsRole){
+					this.roles.errorString = "请至少选择一个角色";
+					return false;
+				}
+				
+				status = "saving";
+				//收集参数
+				var arg:Object = new Object();
+				arg.loginName = this.loginName.text;
+				arg.roles  = rs;
+				arg.mobile  = this.mobile.text;
+				arg.email   = this.email.text;
+				arg.trueName = this.trueName.text;
+
+				//发送保存
+				this.c.dispatch(new RpcEvent("user/update", {"user":JSON.encode(arg)}));
+				return true;
+				
+			}
+			public function cancel():void{
+				var isModify:Boolean = false;
+
+				for(var i:int = 0; i < roles.dataProvider.length;i++){
+					var role:Object = roles.dataProvider.getItemAt(i);
+					if(role["selected"] != role["oldSelected"]){
+						isModify = true;
+					}
+				}
+
+				if( mobile.text != this.userInfo["mobile"] || email.text != this.userInfo["email"] || trueName.text != this.userInfo["trueName"]){
+					isModify = true;
+				}
+				if(isModify){
+					Alert.show("信息未保存，确定要关闭吗？","系统提示",Alert.OK | Alert.CANCEL,this,onExit);
+					return;
+				}
+
+				this.c.remove("user.update");
+				PopUpManager.removePopUp(this);
+			}
+			protected function onExit(e:CloseEvent):void{
+				if(e.detail == Alert.OK){
+					this.c.remove("user.update");
+					PopUpManager.removePopUp(this);
+				}
+			}
+
+			public function  get preferEventListeners():Array
+			{
+				var roles:EventListenerModel = new EventListenerModel("role.findAll",onRoleFindAll);
+				var userUpdateSuccess:EventListenerModel = new EventListenerModel("updateUser.success",onUserUpdateSuccess);
+				var userUpdateFailed:EventListenerModel = new EventListenerModel("updateUser.failed",onUserUpdateFailed);
+				return [roles,userUpdateSuccess,userUpdateFailed];
+			}
+			public function onRoleFindAll(e:GeneralBundleEvent):void{
+				var rs:Array = e.bundle as Array;
+				var ers:Array = this.userInfo["roles"] as Array;
+				for(var i:int = 0; i<rs.length; i++){
+					rs[i]["oldSelected"] = false;
+					rs[i]["selected"] = false;
+					for(var j:int = 0; j < ers.length; j++){
+						if(rs[i]["roleName"] == ers[j]){
+							rs[i]["oldSelected"] = true;
+							rs[i]["selected"] = true;
+						}
+					}
+				}
+				//获取角色
+				this.roles.dataProvider = new ArrayCollection(rs);
+			}
+
+			public function onUserUpdateSuccess(e:GeneralBundleEvent):void{
+				this.c.remove("user.update");
+				PopUpManager.removePopUp(this);
+			}
+			public function onUserUpdateFailed(e:GeneralBundleEvent):void{
+				this.status = "initial";
+				Alert.show("" + e.bundle, "保存失败,原因如下：");
+			}
+			
+			protected function onResize():void{
+				//获得应用主窗口，做为父窗口
+				var app:DisplayObject = this.c.get(util.ObjectNameDefine.APP) as DisplayObject;
+				this.x = (app.width- this.width)/2;
+				this.y = (app.height - this.height)/2;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:RegExpValidator id="emailValidate" property="text" expression="^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+((\.[a-zA-Z0-9_-]\{2,3\})\{1,2\})$" source="{email}" noExpressionError="邮箱不正确" required="false"/>
+		<mx:RegExpValidator id="mobileValidate" expression="^1[358][0-9]\{9\}$"  property="text" source="{mobile}" noMatchError="手机号码不正确" required="false"/>
+		<mx:RegExpValidator id="trueNameValidate" expression="^[\u4e00-\u9fa5\w]\{2,20\}$" flags="g" noMatchError="姓名填写不正确" source="{trueName}" property="text" required="false"/>
+
+	</fx:Declarations>
+	<s:VGroup>
+		<mx:Form id="form">
+			<mx:FormItem label="用户名" required="true">
+				<s:TextInput id="loginName" editable="false" contentBackgroundColor="#696969"/>
+			</mx:FormItem>
+			<mx:FormItem label="角色" required="true">
+				<s:DataGroup id="roles" toolTip="至少选择一个角色"  >
+					<s:layout>
+						<s:TileLayout requestedColumnCount="2"/>
+					</s:layout>
+					<s:itemRenderer>
+						<fx:Component>
+							<s:ItemRenderer>
+
+								<fx:Script>
+									<![CDATA[
+										protected function checkbox1_clickHandler(event:MouseEvent):void
+										{
+											this.data["selected"]= CheckBox(event.target).selected;
+										}
+									]]>
+								</fx:Script>
+
+								<s:CheckBox label="{data['roleName']}"  selected="{data['oldSelected']}" click="checkbox1_clickHandler(event)"  />
+							</s:ItemRenderer>
+						</fx:Component>
+					</s:itemRenderer>
+				</s:DataGroup>
+			</mx:FormItem>
+			<mx:FormItem label="真实姓名：">
+				<s:TextInput id="trueName" />
+			</mx:FormItem>
+			<mx:FormItem label="手机号码：">
+				<s:TextInput id="mobile" />
+			</mx:FormItem>
+			<mx:FormItem label="邮箱：">
+				<s:TextInput id="email" />
+			</mx:FormItem>
+		</mx:Form>
+	</s:VGroup>
+	<s:controlBarContent>
+		<s:Button label="保存" click="save()"/>
+		<s:Button label="取消" click="cancel()"/>
+	</s:controlBarContent>
+	<s:controlBarLayout>
+		<s:HorizontalLayout horizontalAlign="center" paddingLeft="10" paddingRight="10" paddingTop="7" paddingBottom="7" gap="20" />
+	</s:controlBarLayout>
+
+</s:TitleWindow>
