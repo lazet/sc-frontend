@@ -29,5 +29,7 @@ package util
 		static public var USER_EDIT_EVENT:String = "USER_EDIT_EVENT";
 		static public var USER_LOCK_EVENT:String = "USER_LOCK_EVENT";
 		static public var USER_UNLOCK_EVENT:String = "USER_UNLOCK_EVENT";
+		
+		static public var NAVIGATOR_MODULE_SELECTED:String = "NAVIGATOR_MODULE_SELECTED";
 	}
 }

@@ -2,12 +2,15 @@ package sign
 {
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.utils.Dictionary;
 	
 	import manage.ManagerView;
 	
 	import mx.controls.Alert;
 	import mx.validators.StringValidator;
 	import mx.validators.Validator;
+	
+	import operate.OperatorView;
 	
 	import org.lcf.EventListenerModel;
 	import org.lcf.IComponent;
@@ -86,8 +89,55 @@ package sign
 			//清理登录信息
 			password.text = '';
 			this.c.dispatch(new RpcEvent("data/now",{}));
-			//切换到管理页面
-			this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.MANAGER_VIEW,"信息中心",new ManagerView()));
+			//判断是否有权登录多个桌面
+			var desktops:Array = getDesktops(e.bundle);
+			this.c.put(ObjectNameDefine.DESKTOPS , desktops);
+			if(desktops.length == 0 ){
+				Alert.show("提示","当前用户无权进入本系统");
+			}
+			else if(desktops.length == 1 ){
+				//切换到管理页面
+				if(util.ObjectNameDefine.MANAGER_VIEW == desktops[0]["url"])
+					this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.MANAGER_VIEW,"信息中心",new ManagerView()));
+				else
+					this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.OPERATOR_VIEW,"收银台",new OperatorView()));
+			}
+			else{
+				var n:Navigator = new Navigator(this.c,desktops);
+				this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.NAVIGATOR_VIEW,"导航页面",n));
+			}
+			
+			
+			
+		}
+		/**
+		 * 获取当前用户所能登录的桌面集合
+		 */ 
+		public function getDesktops(curentUserInfo:Object):Array{
+			var roles:Array = curentUserInfo["roles"] as Array;
+			var desktops:Dictionary = new Dictionary();
+			if(roles != null){
+				for(var i:int =0; i < roles.length;i++){
+					var powers:Array = roles[i]["powers"];
+					if(powers != null){
+						for(var j:int=0; j< powers.length;j++){
+							if("OPERATOR_VIEW" == powers[j]["url"]){
+								powers[j]["icon"] = "assets/cashier.jpg";
+								desktops[(powers[j]["url"])] = powers[j];
+							}
+							else if ( "MANAGER_VIEW" ==  powers[j]["url"]) {
+								powers[j]["icon"] = "assets/manager.jpg";
+								desktops[(powers[j]["url"])] = powers[j];
+							}
+						}
+					}
+				}
+			}
+			var desktopArray:Array = new Array();
+			for(var a:String in desktops){
+				desktopArray.push(desktops[a]);
+			}
+			return desktopArray;
 			
 		}
 		public function onSignOnFailed(e:GeneralBundleEvent):void{
@@ -123,7 +173,6 @@ package sign
 				case 13:
 					this.onSignOn(null);
 					break;
-
 			}
 		}
 	}

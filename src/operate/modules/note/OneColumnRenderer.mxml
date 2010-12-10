@@ -13,7 +13,7 @@
 				if(a == null){
 					return '';
 				}
-				else if(a instanceof Array){
+				else if(a is Array){
 					return toStr(a as Array);
 				}
 				else 

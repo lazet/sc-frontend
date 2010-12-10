@@ -4,6 +4,7 @@ package util
 	{
 		static public var MANAGER_VIEW:String = "MANAGER_VIEW";
 		static public var OPERATOR_VIEW:String = "OPERATOR_VIEW";
+		static public var NAVIGATOR_VIEW:String = "NAVIGATOR_VIEW";
 		
 		static public var CURRENT_PRODUCT_CATEGORY:String = "CURRENT_PRODUCT_CATEGORY";
 		
@@ -32,5 +33,6 @@ package util
 		static public var USER_VIEW:String = "USER_VIEW";
 		static public var ROLES:String = "ROLES";
 		
+		static public var DESKTOPS:String = "DESKTOPS";
 	}
 }

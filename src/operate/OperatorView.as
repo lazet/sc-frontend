@@ -85,16 +85,16 @@ package operate
 		}
 		protected function onPrint(e:GeneralBundleEvent):void{
 			this.printContent.removeAllElements();
-			if(e.bundle instanceof Array){
+			if(e.bundle is Array){
 				var rs:Array = e.bundle as Array;
 				for(var i:int = 0; i < rs.length; i++){
 					var r:Receipt = rs[i] as Receipt;
 					this.printContent.addElement(r);
 				}
 			}
-			else if(e.bundle instanceof Receipt){
-				var r:Receipt = e.bundle as Receipt;
-				this.printContent.addElement(r);
+			else if(e.bundle is Receipt){
+				var rt:Receipt = e.bundle as Receipt;
+				this.printContent.addElement(rt);
 			}
 			
 			if(this.printContent != null){
@@ -106,7 +106,7 @@ package operate
 						var receipt:Receipt = this.printContent.getElementAt(k) as Receipt;
 						receipt.width = printJob.pageWidth;
 						receipt.height = printJob.pageHeight;
-						for(var i:int=0;i< receipt.number; i++){
+						for(var n:int=0;n< receipt.number; n++){
 							printJob.addObject(r);
 						}
 					}
@@ -184,10 +184,6 @@ package operate
 				this.content.container.put(RpcService.RPC_SERVICE, rpcClient);
 				
 				this.content.open("operate/modules/consume/ConsumePage.swf","下单","operate/modules/consume/ConsumePage.swf");
-			}
-			else if( instance == this.printContent){
-				//增加对打印的支持
-				
 			}
 		}
 		override protected function partRemoved(partName:String, instance:Object):void{

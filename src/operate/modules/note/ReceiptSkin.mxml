@@ -7,7 +7,7 @@
 		<![CDATA[
 			public function printRendererFunction(item:Object):IFactory{
 				var clazz:Class;
-				if(item instanceof Array){
+				if(item is Array){
 					var columns:Array = item as Array;
 					if(columns.length == 2){
 						clazz = TwoColumnRenderer;
