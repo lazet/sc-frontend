@@ -2,8 +2,8 @@ package util
 {
 	public class ObjectNameDefine
 	{
-		static public var MANAGER_VIEW:String = "MANAGER_VIEW";
-		static public var OPERATOR_VIEW:String = "OPERATOR_VIEW";
+		static public var MANAGER_VIEW:String = "manage.ManagerView";
+		static public var OPERATOR_VIEW:String = "operate.OperatorView";
 		static public var NAVIGATOR_VIEW:String = "NAVIGATOR_VIEW";
 		
 		static public var CURRENT_PRODUCT_CATEGORY:String = "CURRENT_PRODUCT_CATEGORY";

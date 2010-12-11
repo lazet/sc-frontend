@@ -30,9 +30,14 @@
 					<mx:Spacer width="100%"/>
 					<mx:LinkButton id="exit" label="退出"  fontFamily="中易宋体" fontSize="14" color="#603A5D" textDecoration="underline"/>
 				</s:HGroup>
-				<s:VGroup height="50%" horizontalAlign="right">
-					<s:DropDownList id="switchView" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
-				</s:VGroup>				
+				<s:Group height="50%">
+					<s:layout>
+						<s:BasicLayout  />
+					</s:layout>
+					<s:DropDownList id="switchView" fontSize="14"/>
+					<s:Label paddingLeft="5" paddingTop="3" text="收银台" fontSize="14" color="#000000"/>
+					
+				</s:Group>				
 			</s:VGroup>
 		</s:Group>
 		<s:Line width="100%">

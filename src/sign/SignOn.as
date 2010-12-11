@@ -98,17 +98,14 @@ package sign
 			else if(desktops.length == 1 ){
 				//切换到管理页面
 				if(util.ObjectNameDefine.MANAGER_VIEW == desktops[0]["url"])
-					this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.MANAGER_VIEW,"信息中心",new ManagerView()));
+					this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,desktops[0]["url"],desktops[0]["name"],new ManagerView()));
 				else
-					this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.OPERATOR_VIEW,"收银台",new OperatorView()));
+					this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,desktops[0]["url"],desktops[0]["name"],new OperatorView()));
 			}
 			else{
 				var n:Navigator = new Navigator(this.c,desktops);
 				this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.NAVIGATOR_VIEW,"导航页面",n));
 			}
-			
-			
-			
 		}
 		/**
 		 * 获取当前用户所能登录的桌面集合
@@ -121,11 +118,11 @@ package sign
 					var powers:Array = roles[i]["powers"];
 					if(powers != null){
 						for(var j:int=0; j< powers.length;j++){
-							if("OPERATOR_VIEW" == powers[j]["url"]){
+							if(util.ObjectNameDefine.OPERATOR_VIEW == powers[j]["url"]){
 								powers[j]["icon"] = "assets/cashier.jpg";
 								desktops[(powers[j]["url"])] = powers[j];
 							}
-							else if ( "MANAGER_VIEW" ==  powers[j]["url"]) {
+							else if ( util.ObjectNameDefine.MANAGER_VIEW ==  powers[j]["url"]) {
 								powers[j]["icon"] = "assets/manager.jpg";
 								desktops[(powers[j]["url"])] = powers[j];
 							}
@@ -137,6 +134,7 @@ package sign
 			for(var a:String in desktops){
 				desktopArray.push(desktops[a]);
 			}
+			desktopArray.sortOn("order");
 			return desktopArray;
 			
 		}

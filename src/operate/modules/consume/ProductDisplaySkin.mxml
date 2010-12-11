@@ -27,10 +27,11 @@
 			</s:HGroup>
 			<mx:Spacer height="100%"/>
 			<s:HGroup verticalAlign="middle">
-				<s:Label text="购买数量："/>
+				<s:Label text="数量："/>
 				<s:NumericStepper id="num" value="1" stepSize="1" minimum="1" maximum="100"/>
+				<s:Button id="buyButton" label="购买"/>
 			</s:HGroup>
-			<s:Button id="buyButton" label="购买"/>
+			
 			<s:Label id="ad" includeInLayout="false" visible="false"/>
 		</s:VGroup>
 	</s:Group>	

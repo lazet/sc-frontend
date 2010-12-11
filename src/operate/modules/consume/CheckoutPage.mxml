@@ -322,10 +322,8 @@
 		<s:State name="mix"/>
 		<s:State name="free" />
 	</c:states>
-	
-	<s:Group height="100%" horizontalCenter="0">
-		<s:VGroup>
-			<s:Label text="结帐"  fontSize="16" fontWeight="bold" width="100%" textAlign="center" />
+	<s:Panel title="结帐" height="100%" horizontalCenter="0">
+		<s:VGroup paddingLeft="3" paddingRight="3" paddingTop="3">
 			<s:VGroup>
 				<s:Label text="商品清单："/>
 				<mx:DataGrid id="purchased" textAlign="center" width="600">
@@ -426,10 +424,10 @@
 			</mx:Grid>
 			<s:Label color="red" id="msg" paddingTop="3"/>
 		</s:VGroup>
-		<s:Group bottom="2" width="100%">
+		<s:Group bottom="3" left="3" right="3">
 			<s:Button label="返回" left="2" click="back()"/>
 			<s:Button label="结帐并打印" click="checkoutAndPrint()" right="200" />
 			<s:Button label="放弃" click="cancel()" right="2"/>
 		</s:Group>
-	</s:Group>
+	</s:Panel>
 </c:AbstractInnerModule>

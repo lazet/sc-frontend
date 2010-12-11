@@ -31,6 +31,7 @@ package operate
 	
 	import spark.components.Button;
 	import spark.components.ButtonBar;
+	import spark.components.ComboBox;
 	import spark.components.DropDownList;
 	import spark.components.Group;
 	import spark.components.Label;
@@ -42,7 +43,6 @@ package operate
 	import util.EventTypeDefine;
 	import util.ObjectNameDefine;
 	import util.RemoteDate;
-	
 	
 	public class OperatorView extends SkinnableComponent implements IComponent
 	{
@@ -117,8 +117,6 @@ package operate
 		public function OperatorView()
 		{
 			super();
-			this.percentWidth = 100;
-			this.percentHeight = 100;
 			this.setStyle("skinClass",OperatorViewSkin);
 		}
 		protected function init():void{
@@ -136,10 +134,9 @@ package operate
 		}
 		protected function onSwitchView(e:IndexChangeEvent):void{
 			
-			if(this.switchView.selectedItem["id"] == ObjectNameDefine.MANAGER_VIEW){
+			if(this.switchView.selectedItem["url"] == ObjectNameDefine.MANAGER_VIEW){
 				this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.MANAGER_VIEW,"信息中心",new ManagerView()));
 			}
-			this.switchView.selectedIndex = 0;
 			e.preventDefault();
 		}
 		protected function onSwitchContent(e:IndexChangeEvent):void{
@@ -171,9 +168,23 @@ package operate
 				this.toolBar.addEventListener(IndexChangeEvent.CHANGE,onSwitchContent);
 			}
 			else if (instance == this.switchView){
-				this.switchView.requireSelection = true;
+				this.switchView.requireSelection = false;
 				this.switchView.labelField = "name";
-				this.switchView.dataProvider = new ArrayCollection([{"id":ObjectNameDefine.OPERATOR_VIEW,"name":"前台交易"},{"id":ObjectNameDefine.MANAGER_VIEW,"name":"后台管理"}]);
+
+				var ds:ArrayCollection = new ArrayCollection();
+				var desktops:Array = this.c.get(ObjectNameDefine.DESKTOPS) as Array;
+				if(desktops.length > 0){
+					for(var i:int = 0; i< desktops.length;i++){
+						var d:Object = desktops[i];
+						if(ObjectNameDefine.OPERATOR_VIEW == d["url"]){
+							
+						}
+						else{
+							ds.addItem(d);
+						}
+					}
+				}
+				this.switchView.dataProvider = ds;
 				this.switchView.addEventListener(IndexChangeEvent.CHANGE,onSwitchView);
 			}
 			else if (instance == this.content){

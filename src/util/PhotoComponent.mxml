@@ -79,7 +79,7 @@
 	</fx:Declarations>
 	<s:Label id="titleDis" text="{title}"/>
 	<s:BorderContainer borderWeight="1" borderStyle="solid" borderVisible="true">
-		<mx:Image id="img" smoothBitmapContent="true"  x="0" y="0" width="120" height="120"  />
+		<mx:Image id="img" maintainAspectRatio="false" smoothBitmapContent="true"  x="0" y="0" width="120" height="120"  />
 	
 	</s:BorderContainer>
 		

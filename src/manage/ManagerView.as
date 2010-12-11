@@ -55,7 +55,6 @@ package manage
 		public function get preferEventListeners():Array
 		{
 			//var signOffSuccess:EventListenerModel = new EventListenerModel(SIGN_OFF_SUCCESS_EVENT,onSignOffSuccess);
-			//将来添加对多个桌台的切换事件处理
 			return [ ];
 		}
 		
@@ -65,8 +64,6 @@ package manage
 		public function ManagerView()
 		{
 			super();
-			this.percentWidth = 100;
-			this.percentHeight = 100;
 			this.setStyle("skinClass",ManagerViewSkin);
 		}
 		protected function init():void{
@@ -82,10 +79,9 @@ package manage
 			}
 		}
 		protected function onSwitchView(e:IndexChangeEvent):void{
-			if(this.switchView.selectedItem["id"] == ObjectNameDefine.OPERATOR_VIEW){
+			if(this.switchView.selectedItem["url"] == ObjectNameDefine.OPERATOR_VIEW){
 				this.c.dispatch(new ModuleEvent(org.lcf.Constants.OPEN_MODULE_EVENT,util.ObjectNameDefine.OPERATOR_VIEW,"前台交易",new OperatorView()));
 			}
-			this.switchView.selectedIndex = 0;
 			e.preventDefault();
 		}
 		protected function onSwitchContent(e:IndexChangeEvent):void{
@@ -117,9 +113,22 @@ package manage
 				this.toolBar.addEventListener(IndexChangeEvent.CHANGE,onSwitchContent);
 			}
 			else if (instance == this.switchView){
-				this.switchView.requireSelection = true;
+				this.switchView.requireSelection = false;
 				this.switchView.labelField = "name";
-				this.switchView.dataProvider = new ArrayCollection([{"id":ObjectNameDefine.MANAGER_VIEW,"name":"后台管理"},{"id":ObjectNameDefine.OPERATOR_VIEW,"name":"前台交易"}]);
+				
+				var ds:ArrayCollection = new ArrayCollection();
+				var desktops:Array = this.c.get(ObjectNameDefine.DESKTOPS) as Array;
+				if(desktops.length > 0){
+					for(var i:int = 0; i< desktops.length;i++){
+						var d:Object = desktops[i];
+						if(ObjectNameDefine.MANAGER_VIEW == d["url"]){
+						}
+						else{
+							ds.addItem(d);
+						}
+					}
+				}
+				this.switchView.dataProvider = ds;
 				this.switchView.addEventListener(IndexChangeEvent.CHANGE,onSwitchView);
 			}
 			else if (instance == this.content){

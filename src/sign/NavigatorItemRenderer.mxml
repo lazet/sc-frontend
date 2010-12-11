@@ -18,6 +18,6 @@
 	<s:layout>
 		<s:VerticalLayout gap="2" horizontalAlign="center"/>
 	</s:layout>
-	<mx:Image width="200" height="200" source="{data['icon']}" click="selectOne()" />
+	<mx:Image width="150" height="200" source="{data['icon']}" click="selectOne()" maintainAspectRatio="false" smoothBitmapContent="true"  />
 	<s:Label text="{data['name']}" fontSize="16" click="selectOne()"/>
 </s:ItemRenderer>

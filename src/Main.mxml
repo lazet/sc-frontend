@@ -18,9 +18,11 @@
 			
 			protected function appInit(event:FlexEvent):void
 			{
-				Security.loadPolicyFile("http://localhost:8080/tcs/crossdomain.xml"); 
+				Security.allowDomain("*");
+				Security.allowInsecureDomain("*");
+				//Security.loadPolicyFile("http://localhost:8080/tcs/crossdomain.xml"); 
 				//加载RPC服务
-				var remoteUrl:String = "http://localhost:8080/tcs/api/";//FlexGlobals.topLevelApplication.url
+				var remoteUrl:String = "http://localhost:8080/tcs/api/";//FlexGlobals.topLevelApplication.url + "/api/"
 				mainView.container.put(RpcService.RPC_SERVICE, new RpcService(remoteUrl));
 				mainView.container.put(SysInfo.SYSTEM_INFO,new SysInfo(remoteUrl));
 				mainView.container.put(util.ObjectNameDefine.APP,this);
