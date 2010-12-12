@@ -30,5 +30,8 @@ package util
 		static public var FROM_SAVED:String = "FROM_SAVED";
 		//购买商品活动的发起方:定时发起的
 		static public var FROM_TIMER:String = "FROM_TIMER";
+		
+		static public var MIX_CODE:String = "rj~qmo$UBKxzr.@,A*9}?|+0degbmDZ1.53yE";
+		
 	}
 }

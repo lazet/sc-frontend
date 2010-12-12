@@ -34,5 +34,11 @@ package util
 		static public var ROLES:String = "ROLES";
 		
 		static public var DESKTOPS:String = "DESKTOPS";
+		
+		static public var SESSION_ID:String = "sessionId";
+		
+		static public var PASSWORD:String = "password";
+		
+		static public var ENCRYPT_CODE:String = "encryptCode";
 	}
 }

@@ -25,12 +25,16 @@ package sign
 	import spark.components.TextInput;
 	import spark.components.supportClasses.SkinnableComponent;
 	
+	import util.Md5;
 	import util.ObjectNameDefine;
 	import util.RemoteDate;
+	import util.Consts;
 	
 	public class SignOn extends SkinnableComponent implements org.lcf.IComponent
 	{
+		include "../util/ScUtil.as";
 		public static var SIGN_ON_SUCCESS_EVENT:String = "signOn.success";
+		public static var SIGN_ON_CONTINUE_EVENT:String = "signOn.continue";
 		public static var SIGN_ON_FAILED_EVENT:String = "signOn.failed";
 		
 		public var c:IContainer;
@@ -73,9 +77,10 @@ package sign
 		public function get preferEventListeners():Array
 		{
 			var signOnSuccess:EventListenerModel = new EventListenerModel(SIGN_ON_SUCCESS_EVENT,onSignOnSuccess);
+			var signOnContinue:EventListenerModel = new EventListenerModel(SIGN_ON_CONTINUE_EVENT,onSignOnContinue);
 			var signOnFailed:EventListenerModel = new EventListenerModel(SIGN_ON_FAILED_EVENT,onSignOnFailed);
 			var getNow:EventListenerModel = new EventListenerModel("now",onGetNow);
-			return [signOnSuccess,signOnFailed,getNow ];
+			return [signOnSuccess,signOnContinue,signOnFailed,getNow ];
 		}
 		public function onGetNow(e:GeneralBundleEvent):void{
 			var now:String = String(e.bundle);
@@ -83,11 +88,33 @@ package sign
 			var today:String = now.substr(0,now.indexOf(" "));
 			this.c.put(ObjectNameDefine.TODAY,today);
 		}
+		public function onSignOnContinue(e:GeneralBundleEvent):void{
+			var validateInfo:Object = e.bundle;
+			//验证服务器
+			var serverKey:String = validateInfo["serverKey"];
+			var sessionId:String = validateInfo["sessionId"];
+			var token:String = this.signOnInfo["token"];
+			var loginName:String = this.signOnInfo["loginName"];
+			var password:String = password.text;
+			var validateString:String = Md5.hex_md5(loginName + token + sessionId + password + Consts.MIX_CODE);
+			if(validateString == serverKey){
+				var validateString2:String = Md5.hex_md5(loginName + serverKey + sessionId + password + Consts.MIX_CODE);
+				var o:Object = new Object();
+				o["sessionId"] = sessionId;
+				o["clientKey"] = validateString2;
+				this.c.dispatch(new RpcEvent("sign/authenticateClient", o));
+			}
+			else{
+				this.c.dispatch(new GeneralBundleEvent(SIGN_ON_FAILED_EVENT,"用户名或密码不正确"));
+			}
+		}
 		public function onSignOnSuccess(e:GeneralBundleEvent):void{
 			//填写公共信息
-			this.c.put(SignInfo.SIGN_INFO,new SignInfo(this.signOnInfo.unitName,this.signOnInfo.loginName,this.signOnInfo.password ));
+			this.c.put(SignInfo.SIGN_INFO,new SignInfo(this.signOnInfo.unitName,this.signOnInfo.loginName,password.text ));
 			//清理登录信息
 			password.text = '';
+			
+			this.c.put(ObjectNameDefine.SESSION_ID,e.bundle[ObjectNameDefine.SESSION_ID]);
 			this.c.dispatch(new RpcEvent("data/now",{}));
 			//判断是否有权登录多个桌面
 			var desktops:Array = getDesktops(e.bundle);
@@ -150,9 +177,10 @@ package sign
 			var o:Object = new Object();
 			o.loginName = loginName.text;
 			o.unitName = unitName.text;
-			o.password = password.text;
+			o.token = randomString();
+			//o.password = password.text;
 			this.signOnInfo = o;
-			c.dispatch(new RpcEvent("sign/signOn", o));
+			c.dispatch(new RpcEvent("sign/authenticateServer", o));
 		}
 		
 		override protected function partAdded(partName:String, instance:Object):void{
