@@ -27,6 +27,7 @@
 			import util.Consts;
 			import util.EventTypeDefine;
 			import util.ObjectNameDefine;
+			import util.SerialCode;
 			
 			protected var saving:Boolean = false;
 			
@@ -37,6 +38,9 @@
 				//从容器中取出合计数，并赋值
 				var total:Number = this.c.get(ObjectNameDefine.PURCHASED_SUM) as Number;
 				sum.text = total.toFixed(2);
+				//从容器中取出流水号
+				var csc:SerialCode = this.c.get(EventTypeDefine.CONSUME_SERIAL_CODE) as SerialCode;
+				this.serialCode.text = "" + csc.currentCode;
 			}
 			
 			public function back():void{
@@ -131,6 +135,7 @@
 				arg["联系电话"] = telephone.text;
 				arg["配送位置"] = site.text;
 				arg["支付方式"] = this.payWay.selectedItem["label"];
+				arg["流水号"] = this.serialCode;
 				
 				var totalMoney:Number = 0;
 				var couponMoney:Number = 0;
@@ -265,9 +270,12 @@
 				this.msg.text = "";
 				this.payWay.selectedIndex = 0;
 				this.changeState(null);
-				
+				//从容器中取出流水号,并加1
+				var csc:SerialCode = this.c.get(EventTypeDefine.CONSUME_SERIAL_CODE) as SerialCode;
+				csc.nextCode();
 				//切换到消费页面
 				this.c.dispatch(new ModuleEvent(Constants.SELECT_MODULE_EVENT,"operate/modules/consume/ConsumePage.swf"));
+				
 			}
 			protected function onCashChange():void{
 				if(isNaN(Number(this.cash.text))) return;
@@ -325,7 +333,10 @@
 	<s:Panel title="结帐" height="100%" horizontalCenter="0">
 		<s:VGroup paddingLeft="3" paddingRight="3" paddingTop="3">
 			<s:VGroup>
-				<s:Label text="商品清单："/>
+				<s:HGroup verticalAlign="middle" >
+					<s:Label text="订单编号：" /><s:Label id="serialCode" /><s:Label paddingBottom="5" text="合计："/><s:Label id="sum"/><s:Label text="元"/>
+				</s:HGroup>
+				
 				<mx:DataGrid id="purchased" textAlign="center" width="600">
 					<mx:columns>
 						<mx:DataGridColumn headerText="商品" dataField="商品"/>
@@ -333,9 +344,6 @@
 						<mx:DataGridColumn headerText="数量" dataField="数量"/>
 					</mx:columns>
 				</mx:DataGrid>
-				<s:HGroup verticalAlign="middle">
-					<s:Label text="合计："/><s:Label id="sum"/><s:Label text="元"/>
-				</s:HGroup>
 			</s:VGroup>
 			<mx:Grid verticalAlign="middle">
 				<mx:GridRow verticalAlign="middle">

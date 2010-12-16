@@ -194,6 +194,7 @@
 	<mx:DataGrid id="resultsDisplay" width="100%" height="100%" textAlign="center">
 		<mx:columns>
 			<mx:DataGridColumn headerText="单据号" dataField="id"/>
+			<mx:DataGridColumn headerText="流水号" dataField="流水号"/>
 			<mx:DataGridColumn headerText="时间" dataField="createdTime"/>
 			<mx:DataGridColumn headerText="金额" dataField="消费总金额"/>
 			<mx:DataGridColumn headerText="商品信息" dataField="keywords" labelFunction="detailShow"/>

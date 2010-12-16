@@ -26,15 +26,22 @@
 			import util.EventTypeDefine;
 			import util.ObjectNameDefine;
 			import util.RemoteDate;
+			import util.SerialCode;
 			
 			//是不是初始化完毕
 			protected var inited:Boolean = false;
 			//商品信息字典
 			protected var pMap:Dictionary = new Dictionary();
 			
+			protected var serialCode:SerialCode;
+			
 			public function init():void{
 				purchased.removeEventListener(EventTypeDefine.CONSUME_ADJUST_PRODUCT_EVENT,onAdjustProduct);
 				purchased.addEventListener(EventTypeDefine.CONSUME_ADJUST_PRODUCT_EVENT,onAdjustProduct);
+				//初始化流水号
+				serialCode = new SerialCode("consume",10,this.c);
+				this.c.put(EventTypeDefine.CONSUME_SERIAL_CODE,serialCode);
+				serialCode.init();
 				
 				if(this.c.get(ObjectNameDefine.OPERATE_PRODUCT_DEFINE) == null){
 					//获取商品定义 
@@ -305,7 +312,9 @@
 		<s:Label id="ad" text="广告"/>
 	</s:VGroup>
 	<s:VGroup height="100%" width="30%" gap="0">
-		<s:Label text="已购商品列表：" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
+		<s:HGroup>
+			<s:Label text="已购商品列表：" backgroundAlpha="1.0" fontFamily="中易宋体" fontSize="14" color="#603A5D"/>
+		</s:HGroup>
 		<s:List id="purchased" width="100%" height="100%" dataProvider="{purchasedProducts}" itemRenderer="operate.modules.consume.PurchasedProductRenderer"/>
 		<s:HGroup verticalAlign="middle">
 			<s:Label text="总计(元)："/><s:Label id="sum" text="{total.toFixed(2)}"  fontFamily="中易宋体" fontSize="16" color="#603A5D" fontWeight="bold" />

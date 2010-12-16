@@ -31,5 +31,7 @@ package util
 		static public var USER_UNLOCK_EVENT:String = "USER_UNLOCK_EVENT";
 		
 		static public var NAVIGATOR_MODULE_SELECTED:String = "NAVIGATOR_MODULE_SELECTED";
+		
+		static public var CONSUME_SERIAL_CODE:String = "CONSUME_SERIAL_CODE";
 	}
 }
