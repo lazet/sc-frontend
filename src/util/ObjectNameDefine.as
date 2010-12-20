@@ -30,6 +30,8 @@ package util
 		static public var PURCHASED_PRODUCTS:String = "PURCHASED_PRODUCTS";
 		static public var PURCHASED_SUM:String = "PURCHASED_SUM";
 		
+		static public var PURCHASED_REGRET_INFO:String = "PURCHASED_REGRET_INFO";
+		
 		static public var USER_VIEW:String = "USER_VIEW";
 		static public var ROLES:String = "ROLES";
 		

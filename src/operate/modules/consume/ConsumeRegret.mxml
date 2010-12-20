@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:AbstractInnerModule xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   xmlns:c="org.lcf.*"
+					   layout="absolute"
+					   width="100%" height="100%"
+					   creationComplete="onInit()" xmlns:consume="operate.modules.consume.*" >
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.validators.Validator;
+			
+			import org.lcf.Constants;
+			import org.lcf.EventListenerModel;
+			import org.lcf.util.GeneralBundleEvent;
+			import org.lcf.util.ModuleEvent;
+			
+			import rpc.RpcEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			import util.Consts;
+			import util.EventTypeDefine;
+			import util.ObjectNameDefine;
+			import util.SerialCode;
+			
+			protected var saving:Boolean = false;
+			
+			public var regretInfo:Object;
+			
+			public function onInit():void{
+				//从容器里取出数据，并为purchasedProducts赋值
+				this.regretInfo=  this.c.get(ObjectNameDefine.PURCHASED_REGRET_INFO);
+				purchased.dataProvider = new ArrayCollection(regretInfo["商品列表"] as Array);
+				sum.text = regretInfo["消费总金额"];
+				this.serialCode.text = regretInfo["流水号"];
+				this.customerName.text = regretInfo["联系人"];
+				this.telephone.text = regretInfo["联系电话"];
+				this.site.text = regretInfo["配送位置"];
+				payWays.dataProvider = new ArrayCollection(regretInfo["支付信息"] as Array);
+			}
+			
+			public override function get preferEventListeners():Array
+			{
+				var saveSuccess:EventListenerModel = new EventListenerModel(EventTypeDefine.PURCHASED_PRODUCT_REGRETED,onSaved);
+				return [saveSuccess];
+			}
+
+			public function cancel():void{
+				this.c.dispatch(new ModuleEvent(Constants.SELECT_MODULE_EVENT,"operate/modules/consume/ConsumeHistory.swf"));
+				this.c.dispatch(new ModuleEvent(Constants.CLOSE_MODULE_EVENT,"operate/modules/consume/ConsumeRegret.swf"));
+			}
+			public function checkoutAndPrint():void{
+				//禁止重复提交
+				if(this.saving){
+					Alert.show("正在保存中，请不要重复提交","保存提示");
+					return;
+				}
+				
+				//验证数据
+				var results:Array = null;
+				results = Validator.validateAll([reasonValidator]);
+				
+				if(results.length > 0){
+					return;
+				}
+				
+				//保存数据
+				var arg:Object = new Object();
+				arg["id"] = regretInfo["id"];
+				arg["reason"] = this.regretReason.text;
+				
+				this.saving = true;
+				this.c.dispatch(new RpcEvent("consumeRecord/regret",arg));
+			}
+			public function onSaved(e:GeneralBundleEvent):void{
+				//切换到订单历史页面
+				this.c.dispatch(new ModuleEvent(Constants.SELECT_MODULE_EVENT,"operate/modules/consume/ConsumeHistory.swf"));
+				this.c.dispatch(new ModuleEvent(Constants.CLOSE_MODULE_EVENT,"operate/modules/consume/ConsumeRegret.swf"));
+			}
+			public function remarks(item:Object, column:DataGridColumn):String{
+				if(item["方式"] == "现金" && item["找零"] != undefined && item["找零"] != null && item["找零"] != "" ){
+					return "找零：" + item["找零"] + "元";
+				}
+				if(item["方式"] == "代金券" && item["数量"] != undefined && item["数量"] != null && item["数量"] != "" ){
+					return "数量：" + item["数量"] + "张";
+				}
+				if(item["方式"] == "免单" && item["原因"] != undefined && item["原因"] != null && item["原因"] != "" ){
+					return "原因：" + item["原因"];
+				}
+				return "";
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:StringValidator id="reasonValidator" minLength="1" maxLength="200" required="true" source="{regretReason}" property="text"/>
+	</fx:Declarations>
+
+	<s:Panel title="悔单" height="100%" horizontalCenter="0">
+		<s:VGroup paddingLeft="3" paddingRight="3" paddingTop="3">
+			<s:VGroup>
+				<s:HGroup verticalAlign="middle" >
+					<s:Label text="订单编号：" /><s:Label id="serialCode" /><s:Label paddingBottom="5" text="合计："/><s:Label id="sum"/><s:Label text="元"/>
+				</s:HGroup>
+				
+				<mx:DataGrid id="purchased" textAlign="center" width="600" height="300">
+					<mx:columns>
+						<mx:DataGridColumn headerText="商品" dataField="商品"/>
+						<mx:DataGridColumn headerText="价格（元）" dataField="价格"/>
+						<mx:DataGridColumn headerText="数量" dataField="数量"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</s:VGroup>
+			<mx:Grid verticalAlign="middle">
+				<mx:GridRow verticalAlign="middle">
+					<mx:GridItem>
+						<s:Label text="联系人："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:Label id="customerName" />
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle">
+					<mx:GridItem>
+						<s:Label text="联系电话："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:Label id="telephone"/>
+					</mx:GridItem>
+				</mx:GridRow>
+				<mx:GridRow verticalAlign="middle">
+					<mx:GridItem>
+						<s:Label text="配送位置："/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<s:Label id="site" width="400"/>
+					</mx:GridItem>
+				</mx:GridRow>
+			</mx:Grid>
+			<mx:DataGrid id="payWays" textAlign="center" width="400">
+				<mx:columns>
+					<mx:DataGridColumn headerText="支付方式" dataField="方式"/>
+					<mx:DataGridColumn headerText="金额(元)" dataField="金额"/>
+					<mx:DataGridColumn headerText="备注" labelFunction="remarks"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:Form paddingTop="5">
+				<mx:FormItem required="true" label="悔单原因：">
+					<s:TextInput id="regretReason" width="400"/>
+				</mx:FormItem>
+			</mx:Form>
+		</s:VGroup>
+		<s:Group bottom="3" left="3" right="3">
+			<s:Button label="悔单" click="checkoutAndPrint()" right="200" />
+			<s:Button label="放弃" click="cancel()" right="2"/>
+		</s:Group>
+	</s:Panel>
+</c:AbstractInnerModule>

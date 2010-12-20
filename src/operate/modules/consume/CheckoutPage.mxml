@@ -135,7 +135,8 @@
 				arg["联系电话"] = telephone.text;
 				arg["配送位置"] = site.text;
 				arg["支付方式"] = this.payWay.selectedItem["label"];
-				arg["流水号"] = this.serialCode;
+				arg["流水号"] = this.serialCode.text;
+				arg["状态"] = '正常';
 				
 				var totalMoney:Number = 0;
 				var couponMoney:Number = 0;
@@ -337,7 +338,7 @@
 					<s:Label text="订单编号：" /><s:Label id="serialCode" /><s:Label paddingBottom="5" text="合计："/><s:Label id="sum"/><s:Label text="元"/>
 				</s:HGroup>
 				
-				<mx:DataGrid id="purchased" textAlign="center" width="600">
+				<mx:DataGrid id="purchased" textAlign="center" width="600" height="300">
 					<mx:columns>
 						<mx:DataGridColumn headerText="商品" dataField="商品"/>
 						<mx:DataGridColumn headerText="价格（元）" dataField="价格"/>

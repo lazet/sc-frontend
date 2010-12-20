@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  focusEnabled="true" top="0" left="0" right="0" bottom="0">
+
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			
+			import org.lcf.util.GeneralBundleEvent;
+			
+			import util.EventTypeDefine;
+			
+			protected function regret_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new GeneralBundleEvent(EventTypeDefine.PURCHASED_PRODUCT_REGRET,this.data));
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				rId.text = data['状态'];
+				if(data['状态'] == '已悔')
+					rId.setStyle("color",0xff0000);
+				else
+					rId.setStyle("color",0x000000);
+			}
+		]]>
+	</fx:Script>
+	
+	<s:HGroup gap="0" horizontalCenter="0">
+		<s:Label id="rId"/>
+	</s:HGroup>
+</s:MXDataGridItemRenderer>
